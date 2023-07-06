@@ -16,6 +16,9 @@ mod tests {
             "OVR" => {
                 stack.ovr().unwrap();
             }
+            "SWP" => {
+                stack.swp().unwrap();
+            }
             _ => todo!("{}", command),
         }
     }

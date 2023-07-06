@@ -42,6 +42,18 @@ impl Stack {
         self.dup()?;
         Ok(())
     }
+
+    pub fn swp(&mut self) -> Result<(), Error> {
+        if self.vec.len() < 2 {
+            Err(Error::Underflow)
+        } else {
+            let a = self.pop()?;
+            let b = self.pop()?;
+            self.vec.push(a);
+            self.vec.push(b);
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
@@ -109,6 +121,27 @@ mod tests {
     fn ovr_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.ovr());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn swp_two_values() {
+        let mut stack = Stack::new(vec![1, 2]);
+        assert_eq!(Ok(()), stack.swp());
+        assert_eq!(vec!(2, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn swp_one_value() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Err(Error::Underflow), stack.swp());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn swp_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.swp());
         assert_eq!(EMPTY, stack.as_vec());
     }
 }
