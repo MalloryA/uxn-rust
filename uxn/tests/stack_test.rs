@@ -5,13 +5,13 @@ mod tests {
     fn call(stack: &mut Stack, command: &str) {
         match command {
             "POP" => {
-                stack.pop();
+                stack.pop().unwrap();
             }
             "DUP" => {
-                stack.dup();
+                stack.dup().unwrap();
             }
             "DUPk" => {
-                stack.dupk();
+                stack.dupk().unwrap();
             }
             _ => todo!("{}", command),
         }

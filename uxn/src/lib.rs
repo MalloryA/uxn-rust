@@ -1,3 +1,4 @@
+pub mod error;
 pub mod stack;
 
 pub fn add(left: usize, right: usize) -> usize {
