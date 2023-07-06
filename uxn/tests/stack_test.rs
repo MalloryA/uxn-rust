@@ -5,7 +5,7 @@ mod tests {
     fn call(stack: &mut Stack, command: &str) {
         match command {
             "POP" => stack.pop(),
-            _ => todo!(),
+            _ => todo!("{}", command),
         };
     }
 
