@@ -2,11 +2,22 @@
 mod tests {
     use uxn::stack::Stack;
 
+    fn call(stack: &mut Stack, command: &str) {
+        match command {
+            "POP" => stack.pop(),
+            _ => todo!(),
+        };
+    }
+
     macro_rules! try_stack {
         ( $x:expr, $y:expr ) => {{
-            let commands = $x;
-            let expected = $y;
-            let stack = Stack::new(vec!['a', 'b', 'c']);
+            let commands: Vec<&str> = $x.split(" ").collect();
+            let expected: Vec<u8> = $y.split(" ").map(|s| s.bytes().next().unwrap()).collect();
+            let mut stack = Stack::new(vec![b'a', b'b', b'c']);
+            for command in commands {
+                call(&mut stack, command);
+            }
+            assert_eq!(expected, stack.as_vec());
         }};
     }
 
