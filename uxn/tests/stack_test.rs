@@ -5,357 +5,356 @@ mod tests {
     macro_rules! try_stack {
         ( $x:expr, $y:expr ) => {{
             let commands = $x;
-            let stack = Stack::new(vec!['a', 'b', 'c']);
             let expected = $y;
+            let stack = Stack::new(vec!['a', 'b', 'c']);
         }};
     }
 
     #[test]
     fn it_works() {
         try_stack!("POP POP", "a");
+        try_stack!("POP POP DUP", "a a");
+        try_stack!("POP POP DUPk", "a a a");
+        try_stack!("POP OVR SWP", "a a b");
+        try_stack!("NIP OVR SWP", "a a c");
+        try_stack!("POP", "a b");
+        try_stack!("POP OVR", "a b a");
+        try_stack!("POP OVR DUP", "a b a a");
+        try_stack!("POP OVR DUPk", "a b a a a");
+        try_stack!("POP OVR SWPk", "a b a a b");
+        try_stack!("POP OVR OVR", "a b a b");
+        try_stack!("POP OVRk", "a b a b a");
+        try_stack!("POP OVR ROTk", "a b a b a a");
+        try_stack!("POP OVRk DUPk", "a b a b a a a");
+        try_stack!("POP OVRk SWPk", "a b a b a a b");
+        try_stack!("POP OVR OVRk", "a b a b a b");
+        try_stack!("POP OVRk ROTk", "a b a b a b a a");
+        try_stack!("POP OVRk OVRk", "a b a b a b a b");
+        try_stack!("POP DUP", "a b b");
+        try_stack!("POP SWPk", "a b b a");
+        try_stack!("POP SWPk DUP", "a b b a a");
+        try_stack!("POP SWPk DUPk", "a b b a a a");
+        try_stack!("POP SWPk SWPk", "a b b a a b");
+        try_stack!("POP SWPk OVR", "a b b a b");
+        try_stack!("POP SWPk OVRk", "a b b a b a b");
+        try_stack!("ROTk NIP ROT", "a b b a c");
+        try_stack!("POP DUPk", "a b b b");
+        try_stack!("POP DUP DUPk", "a b b b b");
+        try_stack!("POP DUP ROTk", "a b b b b a");
+        try_stack!("POP DUP OVRk", "a b b b b b");
+        try_stack!("POP DUPk OVRk", "a b b b b b b");
+        try_stack!("OVR DUP ROT", "a b b b c");
+        try_stack!("OVR SWP", "a b b c");
+        try_stack!("OVR SWP OVR", "a b b c b");
+        try_stack!("OVR SWP OVRk", "a b b c b c b");
+        try_stack!("OVR SWP DUP", "a b b c c");
+        try_stack!("OVR SWP SWPk", "a b b c c b");
+        try_stack!("OVR SWP DUPk", "a b b c c c");
+        try_stack!("POPk", "a b c");
+        try_stack!("ROTk NIP NIP", "a b c a");
+        try_stack!("ROTk NIP SWP", "a b c a b");
+        try_stack!("ROTk ROT ROT", "a b c a b c");
+        try_stack!("ROTk SWP ROT", "a b c a c b");
+        try_stack!("OVR", "a b c b");
+        try_stack!("ROTk NIP", "a b c b a");
+        try_stack!("ROTk NIP DUP", "a b c b a a");
+        try_stack!("ROTk NIP DUPk", "a b c b a a a");
+        try_stack!("ROTk NIP SWPk", "a b c b a a b");
+        try_stack!("ROTk DUP ROT", "a b c b a a c");
+        try_stack!("ROTk NIP OVR", "a b c b a b");
+        try_stack!("ROTk NIP OVRk", "a b c b a b a b");
+        try_stack!("ROTk NIP ROTk", "a b c b a b a c");
+        try_stack!("ROTk SWP", "a b c b a c");
+        try_stack!("ROTk SWP OVR", "a b c b a c a");
+        try_stack!("ROTk SWP OVRk", "a b c b a c a c a");
+        try_stack!("ROTk SWP ROTk", "a b c b a c a c b");
+        try_stack!("ROTk SWP DUP", "a b c b a c c");
+        try_stack!("ROTk SWP SWPk", "a b c b a c c a");
+        try_stack!("ROTk SWP DUPk", "a b c b a c c c");
+        try_stack!("OVR DUP", "a b c b b");
+        try_stack!("OVR DUPk", "a b c b b b");
+        try_stack!("OVR DUP DUPk", "a b c b b b b");
+        try_stack!("OVR DUP OVRk", "a b c b b b b b");
+        try_stack!("OVR DUPk OVRk", "a b c b b b b b b");
+        try_stack!("OVR DUP ROTk", "a b c b b b b c");
+        try_stack!("OVR ROTk ROT", "a b c b b b c");
+        try_stack!("OVR SWPk", "a b c b b c");
+        try_stack!("OVR SWPk OVR", "a b c b b c b");
+        try_stack!("OVR SWPk OVRk", "a b c b b c b c b");
+        try_stack!("OVR SWPk DUP", "a b c b b c c");
+        try_stack!("OVR SWPk SWPk", "a b c b b c c b");
+        try_stack!("OVR SWPk DUPk", "a b c b b c c c");
+        try_stack!("OVR OVR", "a b c b c");
+        try_stack!("ROTk", "a b c b c a");
+        try_stack!("ROTk DUP", "a b c b c a a");
+        try_stack!("ROTk DUPk", "a b c b c a a a");
+        try_stack!("ROTk DUP DUPk", "a b c b c a a a a");
+        try_stack!("ROTk DUP OVRk", "a b c b c a a a a a");
+        try_stack!("ROTk DUPk OVRk", "a b c b c a a a a a a");
+        try_stack!("ROTk DUP ROTk", "a b c b c a a a a c");
+        try_stack!("ROTk ROTk ROT", "a b c b c a a b c");
+        try_stack!("ROTk SWPk", "a b c b c a a c");
+        try_stack!("ROTk SWPk OVR", "a b c b c a a c a");
+        try_stack!("ROTk SWPk OVRk", "a b c b c a a c a c a");
+        try_stack!("ROTk SWPk DUP", "a b c b c a a c c");
+        try_stack!("ROTk SWPk SWPk", "a b c b c a a c c a");
+        try_stack!("ROTk SWPk DUPk", "a b c b c a a c c c");
+        try_stack!("ROTk OVR", "a b c b c a c");
+        try_stack!("ROTk OVR OVR", "a b c b c a c a");
+        try_stack!("ROTk ROTk", "a b c b c a c a b");
+        try_stack!("ROTk ROTk OVR", "a b c b c a c a b a");
+        try_stack!("ROTk ROTk OVRk", "a b c b c a c a b a b a");
+        try_stack!("ROTk ROTk ROTk", "a b c b c a c a b a b c");
+        try_stack!("ROTk ROTk DUP", "a b c b c a c a b b");
+        try_stack!("ROTk ROTk SWPk", "a b c b c a c a b b a");
+        try_stack!("ROTk ROTk DUPk", "a b c b c a c a b b b");
+        try_stack!("ROTk OVRk", "a b c b c a c a c");
+        try_stack!("ROTk OVR OVRk", "a b c b c a c a c a");
+        try_stack!("ROTk OVRk OVRk", "a b c b c a c a c a c a");
+        try_stack!("ROTk OVRk ROTk", "a b c b c a c a c a c c");
+        try_stack!("ROTk OVR ROTk", "a b c b c a c a c c");
+        try_stack!("ROTk OVRk SWPk", "a b c b c a c a c c a");
+        try_stack!("ROTk OVRk DUPk", "a b c b c a c a c c c");
+        try_stack!("ROTk ROTk NIP", "a b c b c a c b");
+        try_stack!("ROTk ROTk SWP", "a b c b c a c b a");
+        try_stack!("ROTk OVR DUP", "a b c b c a c c");
+        try_stack!("ROTk OVR SWPk", "a b c b c a c c a");
+        try_stack!("ROTk OVR DUPk", "a b c b c a c c c");
+        try_stack!("OVRk", "a b c b c b");
+        try_stack!("OVR ROTk", "a b c b c b b");
+        try_stack!("OVRk DUPk", "a b c b c b b b");
+        try_stack!("OVR ROTk DUPk", "a b c b c b b b b");
+        try_stack!("OVR ROTk OVRk", "a b c b c b b b b b");
+        try_stack!("OVRk DUPk OVRk", "a b c b c b b b b b b");
+        try_stack!("OVR ROTk ROTk", "a b c b c b b b b c");
+        try_stack!("OVRk ROTk ROT", "a b c b c b b b c");
+        try_stack!("OVRk SWPk", "a b c b c b b c");
+        try_stack!("OVRk SWPk OVR", "a b c b c b b c b");
+        try_stack!("OVRk SWPk OVRk", "a b c b c b b c b c b");
+        try_stack!("OVRk SWPk DUP", "a b c b c b b c c");
+        try_stack!("OVRk SWPk SWPk", "a b c b c b b c c b");
+        try_stack!("OVRk SWPk DUPk", "a b c b c b b c c c");
+        try_stack!("OVR OVRk", "a b c b c b c");
+        try_stack!("OVR OVR OVRk", "a b c b c b c b");
+        try_stack!("OVRk ROTk", "a b c b c b c b b");
+        try_stack!("OVRk ROTk DUP", "a b c b c b c b b b");
+        try_stack!("OVRk ROTk DUPk", "a b c b c b c b b b b");
+        try_stack!("OVRk ROTk OVRk", "a b c b c b c b b b b b");
+        try_stack!("OVRk ROTk ROTk", "a b c b c b c b b b b c");
+        try_stack!("OVRk OVRk", "a b c b c b c b c");
+        try_stack!("OVR OVRk OVRk", "a b c b c b c b c b");
+        try_stack!("OVRk OVRk OVRk", "a b c b c b c b c b c b");
+        try_stack!("OVRk OVRk ROTk", "a b c b c b c b c b c c");
+        try_stack!("OVR OVRk ROTk", "a b c b c b c b c c");
+        try_stack!("OVRk OVRk SWPk", "a b c b c b c b c c b");
+        try_stack!("OVRk OVRk DUPk", "a b c b c b c b c c c");
+        try_stack!("OVR OVR ROTk", "a b c b c b c c");
+        try_stack!("OVR OVRk SWPk", "a b c b c b c c b");
+        try_stack!("OVR OVRk DUPk", "a b c b c b c c c");
+        try_stack!("OVR OVR DUP", "a b c b c c");
+        try_stack!("ROTk OVR SWP", "a b c b c c a");
+        try_stack!("OVR OVR SWPk", "a b c b c c b");
+        try_stack!("OVR OVR DUPk", "a b c b c c c");
+        try_stack!("DUP", "a b c c");
+        try_stack!("ROTk ROT POP", "a b c c a");
+        try_stack!("ROTk ROT", "a b c c a b");
+        try_stack!("ROTk ROT OVR", "a b c c a b a");
+        try_stack!("ROTk ROT OVRk", "a b c c a b a b a");
+        try_stack!("ROTk ROT ROTk", "a b c c a b a b c");
+        try_stack!("ROTk ROT DUP", "a b c c a b b");
+        try_stack!("ROTk ROT SWPk", "a b c c a b b a");
+        try_stack!("ROTk ROT DUPk", "a b c c a b b b");
+        try_stack!("SWPk", "a b c c b");
+        try_stack!("ROTk ROT SWP", "a b c c b a");
+        try_stack!("SWPk DUP", "a b c c b b");
+        try_stack!("SWPk DUPk", "a b c c b b b");
+        try_stack!("SWPk DUP DUPk", "a b c c b b b b");
+        try_stack!("SWPk DUP OVRk", "a b c c b b b b b");
+        try_stack!("SWPk DUPk OVRk", "a b c c b b b b b b");
+        try_stack!("SWPk DUP ROTk", "a b c c b b b b c");
+        try_stack!("SWPk SWPk", "a b c c b b c");
+        try_stack!("SWPk SWPk OVR", "a b c c b b c b");
+        try_stack!("SWPk SWPk OVRk", "a b c c b b c b c b");
+        try_stack!("SWPk SWPk DUP", "a b c c b b c c");
+        try_stack!("SWPk SWPk SWPk", "a b c c b b c c b");
+        try_stack!("SWPk SWPk DUPk", "a b c c b b c c c");
+        try_stack!("SWPk OVR", "a b c c b c");
+        try_stack!("SWPk OVR OVR", "a b c c b c b");
+        try_stack!("SWPk OVRk", "a b c c b c b c");
+        try_stack!("SWPk OVR OVRk", "a b c c b c b c b");
+        try_stack!("SWPk OVRk OVRk", "a b c c b c b c b c b");
+        try_stack!("SWPk OVRk ROTk", "a b c c b c b c b c c");
+        try_stack!("SWPk OVR ROTk", "a b c c b c b c c");
+        try_stack!("SWPk OVRk SWPk", "a b c c b c b c c b");
+        try_stack!("SWPk OVRk DUPk", "a b c c b c b c c c");
+        try_stack!("SWPk OVR DUP", "a b c c b c c");
+        try_stack!("SWPk OVR SWPk", "a b c c b c c b");
+        try_stack!("SWPk OVR DUPk", "a b c c b c c c");
+        try_stack!("DUPk", "a b c c c");
+        try_stack!("DUP ROTk NIP", "a b c c c b");
+        try_stack!("DUP ROTk SWP", "a b c c c b c");
+        try_stack!("DUP DUPk", "a b c c c c");
+        try_stack!("DUP ROTk", "a b c c c c b");
+        try_stack!("DUP ROTk DUP", "a b c c c c b b");
+        try_stack!("DUP ROTk DUPk", "a b c c c c b b b");
+        try_stack!("DUP ROTk SWPk", "a b c c c c b b c");
+        try_stack!("DUP ROTk OVR", "a b c c c c b c");
+        try_stack!("DUP ROTk OVRk", "a b c c c c b c b c");
+        try_stack!("DUP OVRk", "a b c c c c c");
+        try_stack!("DUPk OVRk", "a b c c c c c c");
+        try_stack!("DUP DUPk OVRk", "a b c c c c c c c");
+        try_stack!("DUP OVRk OVRk", "a b c c c c c c c c");
+        try_stack!("DUPk OVRk OVRk", "a b c c c c c c c c c");
+        try_stack!("NIP", "a c");
+        try_stack!("NIP OVR", "a c a");
+        try_stack!("NIP OVR DUP", "a c a a");
+        try_stack!("NIP OVR DUPk", "a c a a a");
+        try_stack!("NIP OVR SWPk", "a c a a c");
+        try_stack!("NIP OVR OVR", "a c a c");
+        try_stack!("NIP OVRk", "a c a c a");
+        try_stack!("NIP OVR ROTk", "a c a c a a");
+        try_stack!("NIP OVRk DUPk", "a c a c a a a");
+        try_stack!("NIP OVRk SWPk", "a c a c a a c");
+        try_stack!("NIP OVR OVRk", "a c a c a c");
+        try_stack!("NIP OVRk ROTk", "a c a c a c a a");
+        try_stack!("NIP OVRk OVRk", "a c a c a c a c");
+        try_stack!("SWP", "a c b");
+        try_stack!("SWP DUP", "a c b b");
+        try_stack!("SWP ROTk ROT", "a c b b a c");
+        try_stack!("SWP DUPk", "a c b b b");
+        try_stack!("SWP DUP DUPk", "a c b b b b");
+        try_stack!("SWP DUP OVRk", "a c b b b b b");
+        try_stack!("SWP DUPk OVRk", "a c b b b b b b");
+        try_stack!("SWP DUP ROTk", "a c b b b b c");
+        try_stack!("SWP SWPk", "a c b b c");
+        try_stack!("SWP SWPk OVR", "a c b b c b");
+        try_stack!("SWP SWPk OVRk", "a c b b c b c b");
+        try_stack!("SWP SWPk DUP", "a c b b c c");
+        try_stack!("SWP SWPk SWPk", "a c b b c c b");
+        try_stack!("SWP SWPk DUPk", "a c b b c c c");
+        try_stack!("SWP OVR", "a c b c");
+        try_stack!("SWP ROTk NIP", "a c b c a");
+        try_stack!("SWP ROTk SWP", "a c b c a b");
+        try_stack!("SWP OVR OVR", "a c b c b");
+        try_stack!("SWP ROTk", "a c b c b a");
+        try_stack!("SWP ROTk DUP", "a c b c b a a");
+        try_stack!("SWP ROTk DUPk", "a c b c b a a a");
+        try_stack!("SWP ROTk SWPk", "a c b c b a a b");
+        try_stack!("SWP ROTk OVR", "a c b c b a b");
+        try_stack!("SWP ROTk OVRk", "a c b c b a b a b");
+        try_stack!("SWP ROTk ROTk", "a c b c b a b a c");
+        try_stack!("SWP OVRk", "a c b c b c");
+        try_stack!("SWP OVR OVRk", "a c b c b c b");
+        try_stack!("SWP OVRk OVRk", "a c b c b c b c b");
+        try_stack!("SWP OVRk ROTk", "a c b c b c b c c");
+        try_stack!("SWP OVR ROTk", "a c b c b c c");
+        try_stack!("SWP OVRk SWPk", "a c b c b c c b");
+        try_stack!("SWP OVRk DUPk", "a c b c b c c c");
+        try_stack!("SWP OVR DUP", "a c b c c");
+        try_stack!("SWP OVR SWPk", "a c b c c b");
+        try_stack!("SWP OVR DUPk", "a c b c c c");
+        try_stack!("NIP DUP", "a c c");
+        try_stack!("NIP SWPk", "a c c a");
+        try_stack!("NIP SWPk DUP", "a c c a a");
+        try_stack!("NIP SWPk DUPk", "a c c a a a");
+        try_stack!("NIP SWPk SWPk", "a c c a a c");
+        try_stack!("NIP SWPk OVR", "a c c a c");
+        try_stack!("NIP SWPk OVRk", "a c c a c a c");
+        try_stack!("DUP ROT", "a c c b");
+        try_stack!("DUP ROT DUP", "a c c b b");
+        try_stack!("DUP ROT DUPk", "a c c b b b");
+        try_stack!("DUP ROT SWPk", "a c c b b c");
+        try_stack!("DUP ROT OVR", "a c c b c");
+        try_stack!("DUP ROT OVRk", "a c c b c b c");
+        try_stack!("NIP DUPk", "a c c c");
+        try_stack!("NIP DUP DUPk", "a c c c c");
+        try_stack!("NIP DUP ROTk", "a c c c c a");
+        try_stack!("NIP DUP OVRk", "a c c c c c");
+        try_stack!("NIP DUPk OVRk", "a c c c c c c");
+        try_stack!("POP NIP", "b");
+        try_stack!("POP SWP", "b a");
+        try_stack!("POP SWP DUP", "b a a");
+        try_stack!("POP SWP DUPk", "b a a a");
+        try_stack!("POP SWP SWPk", "b a a b");
+        try_stack!("ROT DUP ROT", "b a a c");
+        try_stack!("POP SWP OVR", "b a b");
+        try_stack!("POP SWP OVRk", "b a b a b");
+        try_stack!("ROT SWP", "b a c");
+        try_stack!("ROT SWP OVR", "b a c a");
+        try_stack!("ROT SWP OVRk", "b a c a c a");
+        try_stack!("ROT SWP ROTk", "b a c a c b");
+        try_stack!("ROT SWP DUP", "b a c c");
+        try_stack!("ROT SWP SWPk", "b a c c a");
+        try_stack!("ROT SWP DUPk", "b a c c c");
+        try_stack!("POP NIP DUP", "b b");
+        try_stack!("POP DUP ROT", "b b a");
+        try_stack!("POP NIP DUPk", "b b b");
+        try_stack!("ROT POP", "b c");
+        try_stack!("ROT", "b c a");
+        try_stack!("ROT DUP", "b c a a");
+        try_stack!("ROT DUPk", "b c a a a");
+        try_stack!("ROT DUP DUPk", "b c a a a a");
+        try_stack!("ROT DUP OVRk", "b c a a a a a");
+        try_stack!("ROT DUPk OVRk", "b c a a a a a a");
+        try_stack!("ROT DUP ROTk", "b c a a a a c");
+        try_stack!("ROT ROTk ROT", "b c a a b c");
+        try_stack!("ROT SWPk", "b c a a c");
+        try_stack!("ROT SWPk OVR", "b c a a c a");
+        try_stack!("ROT SWPk OVRk", "b c a a c a c a");
+        try_stack!("ROT SWPk DUP", "b c a a c c");
+        try_stack!("ROT SWPk SWPk", "b c a a c c a");
+        try_stack!("ROT SWPk DUPk", "b c a a c c c");
+        try_stack!("ROT OVR", "b c a c");
+        try_stack!("ROT OVR OVR", "b c a c a");
+        try_stack!("ROT ROTk", "b c a c a b");
+        try_stack!("ROT ROTk OVR", "b c a c a b a");
+        try_stack!("ROT ROTk OVRk", "b c a c a b a b a");
+        try_stack!("ROT ROTk ROTk", "b c a c a b a b c");
+        try_stack!("ROT ROTk DUP", "b c a c a b b");
+        try_stack!("ROT ROTk SWPk", "b c a c a b b a");
+        try_stack!("ROT ROTk DUPk", "b c a c a b b b");
+        try_stack!("ROT OVRk", "b c a c a c");
+        try_stack!("ROT OVR OVRk", "b c a c a c a");
+        try_stack!("ROT OVRk OVRk", "b c a c a c a c a");
+        try_stack!("ROT OVRk ROTk", "b c a c a c a c c");
+        try_stack!("ROT OVR ROTk", "b c a c a c c");
+        try_stack!("ROT OVRk SWPk", "b c a c a c c a");
+        try_stack!("ROT OVRk DUPk", "b c a c a c c c");
+        try_stack!("ROT ROTk NIP", "b c a c b");
+        try_stack!("ROT ROTk SWP", "b c a c b a");
+        try_stack!("ROT OVR DUP", "b c a c c");
+        try_stack!("ROT OVR SWPk", "b c a c c a");
+        try_stack!("ROT OVR DUPk", "b c a c c c");
+        try_stack!("ROT POP OVR", "b c b");
+        try_stack!("ROT POP OVRk", "b c b c b");
+        try_stack!("ROT POP DUP", "b c c");
+        try_stack!("ROT OVR SWP", "b c c a");
+        try_stack!("ROT POP SWPk", "b c c b");
+        try_stack!("ROT POP DUPk", "b c c c");
+        try_stack!("NIP NIP", "c");
+        try_stack!("NIP SWP", "c a");
+        try_stack!("NIP SWP DUP", "c a a");
+        try_stack!("NIP SWP DUPk", "c a a a");
+        try_stack!("NIP SWP SWPk", "c a a c");
+        try_stack!("ROT ROT", "c a b");
+        try_stack!("ROT ROT OVR", "c a b a");
+        try_stack!("ROT ROT OVRk", "c a b a b a");
+        try_stack!("ROT ROT ROTk", "c a b a b c");
+        try_stack!("ROT ROT DUP", "c a b b");
+        try_stack!("ROT ROT SWPk", "c a b b a");
+        try_stack!("ROT ROT DUPk", "c a b b b");
+        try_stack!("NIP SWP OVR", "c a c");
+        try_stack!("NIP SWP OVRk", "c a c a c");
+        try_stack!("SWP ROT POP", "c b");
+        try_stack!("SWP ROT", "c b a");
+        try_stack!("SWP ROT DUP", "c b a a");
+        try_stack!("SWP ROT DUPk", "c b a a a");
+        try_stack!("SWP ROT SWPk", "c b a a b");
+        try_stack!("SWP ROT OVR", "c b a b");
+        try_stack!("SWP ROT OVRk", "c b a b a b");
+        try_stack!("SWP ROT ROTk", "c b a b a c");
+        try_stack!("NIP NIP DUP", "c c");
+        try_stack!("NIP DUP ROT", "c c a");
+        try_stack!("NIP NIP DUPk", "c c c");
     }
 }
-// <tr><td>POP POP</td><td>a</td></tr>
-// <tr><td>POP POP DUP</td><td>a a</td></tr>
-// <tr><td>POP POP DUPk</td><td>a a a</td></tr>
-// <tr><td>POP OVR SWP</td><td>a a b</td></tr>
-// <tr><td>NIP OVR SWP</td><td>a a c</td></tr>
-// <tr><td>POP</td><td>a b</td></tr>
-// <tr><td>POP OVR</td><td>a b a</td></tr>
-// <tr><td>POP OVR DUP</td><td>a b a a</td></tr>
-// <tr><td>POP OVR DUPk</td><td>a b a a a</td></tr>
-// <tr><td>POP OVR SWPk</td><td>a b a a b</td></tr>
-// <tr><td>POP OVR OVR</td><td>a b a b</td></tr>
-// <tr><td>POP OVRk</td><td>a b a b a</td></tr>
-// <tr><td>POP OVR ROTk</td><td>a b a b a a</td></tr>
-// <tr><td>POP OVRk DUPk</td><td>a b a b a a a</td></tr>
-// <tr><td>POP OVRk SWPk</td><td>a b a b a a b</td></tr>
-// <tr><td>POP OVR OVRk</td><td>a b a b a b</td></tr>
-// <tr><td>POP OVRk ROTk</td><td>a b a b a b a a</td></tr>
-// <tr><td>POP OVRk OVRk</td><td>a b a b a b a b</td></tr>
-// <tr><td>POP DUP</td><td>a b b</td></tr>
-// <tr><td>POP SWPk</td><td>a b b a</td></tr>
-// <tr><td>POP SWPk DUP</td><td>a b b a a</td></tr>
-// <tr><td>POP SWPk DUPk</td><td>a b b a a a</td></tr>
-// <tr><td>POP SWPk SWPk</td><td>a b b a a b</td></tr>
-// <tr><td>POP SWPk OVR</td><td>a b b a b</td></tr>
-// <tr><td>POP SWPk OVRk</td><td>a b b a b a b</td></tr>
-// <tr><td>ROTk NIP ROT</td><td>a b b a c</td></tr>
-// <tr><td>POP DUPk</td><td>a b b b</td></tr>
-// <tr><td>POP DUP DUPk</td><td>a b b b b</td></tr>
-// <tr><td>POP DUP ROTk</td><td>a b b b b a</td></tr>
-// <tr><td>POP DUP OVRk</td><td>a b b b b b</td></tr>
-// <tr><td>POP DUPk OVRk</td><td>a b b b b b b</td></tr>
-// <tr><td>OVR DUP ROT</td><td>a b b b c</td></tr>
-// <tr><td>OVR SWP</td><td>a b b c</td></tr>
-// <tr><td>OVR SWP OVR</td><td>a b b c b</td></tr>
-// <tr><td>OVR SWP OVRk</td><td>a b b c b c b</td></tr>
-// <tr><td>OVR SWP DUP</td><td>a b b c c</td></tr>
-// <tr><td>OVR SWP SWPk</td><td>a b b c c b</td></tr>
-// <tr><td>OVR SWP DUPk</td><td>a b b c c c</td></tr>
-// <tr><td>POPk</td><td>a b c</td></tr>
-// <tr><td>ROTk NIP NIP</td><td>a b c a</td></tr>
-// <tr><td>ROTk NIP SWP</td><td>a b c a b</td></tr>
-// <tr><td>ROTk ROT ROT</td><td>a b c a b c</td></tr>
-// <tr><td>ROTk SWP ROT</td><td>a b c a c b</td></tr>
-// <tr><td>OVR</td><td>a b c b</td></tr>
-// <tr><td>ROTk NIP</td><td>a b c b a</td></tr>
-// <tr><td>ROTk NIP DUP</td><td>a b c b a a</td></tr>
-// <tr><td>ROTk NIP DUPk</td><td>a b c b a a a</td></tr>
-// <tr><td>ROTk NIP SWPk</td><td>a b c b a a b</td></tr>
-// <tr><td>ROTk DUP ROT</td><td>a b c b a a c</td></tr>
-// <tr><td>ROTk NIP OVR</td><td>a b c b a b</td></tr>
-// <tr><td>ROTk NIP OVRk</td><td>a b c b a b a b</td></tr>
-// <tr><td>ROTk NIP ROTk</td><td>a b c b a b a c</td></tr>
-// <tr><td>ROTk SWP</td><td>a b c b a c</td></tr>
-// <tr><td>ROTk SWP OVR</td><td>a b c b a c a</td></tr>
-// <tr><td>ROTk SWP OVRk</td><td>a b c b a c a c a</td></tr>
-// <tr><td>ROTk SWP ROTk</td><td>a b c b a c a c b</td></tr>
-// <tr><td>ROTk SWP DUP</td><td>a b c b a c c</td></tr>
-// <tr><td>ROTk SWP SWPk</td><td>a b c b a c c a</td></tr>
-// <tr><td>ROTk SWP DUPk</td><td>a b c b a c c c</td></tr>
-// <tr><td>OVR DUP</td><td>a b c b b</td></tr>
-// <tr><td>OVR DUPk</td><td>a b c b b b</td></tr>
-// <tr><td>OVR DUP DUPk</td><td>a b c b b b b</td></tr>
-// <tr><td>OVR DUP OVRk</td><td>a b c b b b b b</td></tr>
-// <tr><td>OVR DUPk OVRk</td><td>a b c b b b b b b</td></tr>
-// <tr><td>OVR DUP ROTk</td><td>a b c b b b b c</td></tr>
-// <tr><td>OVR ROTk ROT</td><td>a b c b b b c</td></tr>
-// <tr><td>OVR SWPk</td><td>a b c b b c</td></tr>
-// <tr><td>OVR SWPk OVR</td><td>a b c b b c b</td></tr>
-// <tr><td>OVR SWPk OVRk</td><td>a b c b b c b c b</td></tr>
-// <tr><td>OVR SWPk DUP</td><td>a b c b b c c</td></tr>
-// <tr><td>OVR SWPk SWPk</td><td>a b c b b c c b</td></tr>
-// <tr><td>OVR SWPk DUPk</td><td>a b c b b c c c</td></tr>
-// <tr><td>OVR OVR</td><td>a b c b c</td></tr>
-// <tr><td>ROTk</td><td>a b c b c a</td></tr>
-// <tr><td>ROTk DUP</td><td>a b c b c a a</td></tr>
-// <tr><td>ROTk DUPk</td><td>a b c b c a a a</td></tr>
-// <tr><td>ROTk DUP DUPk</td><td>a b c b c a a a a</td></tr>
-// <tr><td>ROTk DUP OVRk</td><td>a b c b c a a a a a</td></tr>
-// <tr><td>ROTk DUPk OVRk</td><td>a b c b c a a a a a a</td></tr>
-// <tr><td>ROTk DUP ROTk</td><td>a b c b c a a a a c</td></tr>
-// <tr><td>ROTk ROTk ROT</td><td>a b c b c a a b c</td></tr>
-// <tr><td>ROTk SWPk</td><td>a b c b c a a c</td></tr>
-// <tr><td>ROTk SWPk OVR</td><td>a b c b c a a c a</td></tr>
-// <tr><td>ROTk SWPk OVRk</td><td>a b c b c a a c a c a</td></tr>
-// <tr><td>ROTk SWPk DUP</td><td>a b c b c a a c c</td></tr>
-// <tr><td>ROTk SWPk SWPk</td><td>a b c b c a a c c a</td></tr>
-// <tr><td>ROTk SWPk DUPk</td><td>a b c b c a a c c c</td></tr>
-// <tr><td>ROTk OVR</td><td>a b c b c a c</td></tr>
-// <tr><td>ROTk OVR OVR</td><td>a b c b c a c a</td></tr>
-// <tr><td>ROTk ROTk</td><td>a b c b c a c a b</td></tr>
-// <tr><td>ROTk ROTk OVR</td><td>a b c b c a c a b a</td></tr>
-// <tr><td>ROTk ROTk OVRk</td><td>a b c b c a c a b a b a</td></tr>
-// <tr><td>ROTk ROTk ROTk</td><td>a b c b c a c a b a b c</td></tr>
-// <tr><td>ROTk ROTk DUP</td><td>a b c b c a c a b b</td></tr>
-// <tr><td>ROTk ROTk SWPk</td><td>a b c b c a c a b b a</td></tr>
-// <tr><td>ROTk ROTk DUPk</td><td>a b c b c a c a b b b</td></tr>
-// <tr><td>ROTk OVRk</td><td>a b c b c a c a c</td></tr>
-// <tr><td>ROTk OVR OVRk</td><td>a b c b c a c a c a</td></tr>
-// <tr><td>ROTk OVRk OVRk</td><td>a b c b c a c a c a c a</td></tr>
-// <tr><td>ROTk OVRk ROTk</td><td>a b c b c a c a c a c c</td></tr>
-// <tr><td>ROTk OVR ROTk</td><td>a b c b c a c a c c</td></tr>
-// <tr><td>ROTk OVRk SWPk</td><td>a b c b c a c a c c a</td></tr>
-// <tr><td>ROTk OVRk DUPk</td><td>a b c b c a c a c c c</td></tr>
-// <tr><td>ROTk ROTk NIP</td><td>a b c b c a c b</td></tr>
-// <tr><td>ROTk ROTk SWP</td><td>a b c b c a c b a</td></tr>
-// <tr><td>ROTk OVR DUP</td><td>a b c b c a c c</td></tr>
-// <tr><td>ROTk OVR SWPk</td><td>a b c b c a c c a</td></tr>
-// <tr><td>ROTk OVR DUPk</td><td>a b c b c a c c c</td></tr>
-// <tr><td>OVRk</td><td>a b c b c b</td></tr>
-// <tr><td>OVR ROTk</td><td>a b c b c b b</td></tr>
-// <tr><td>OVRk DUPk</td><td>a b c b c b b b</td></tr>
-// <tr><td>OVR ROTk DUPk</td><td>a b c b c b b b b</td></tr>
-// <tr><td>OVR ROTk OVRk</td><td>a b c b c b b b b b</td></tr>
-// <tr><td>OVRk DUPk OVRk</td><td>a b c b c b b b b b b</td></tr>
-// <tr><td>OVR ROTk ROTk</td><td>a b c b c b b b b c</td></tr>
-// <tr><td>OVRk ROTk ROT</td><td>a b c b c b b b c</td></tr>
-// <tr><td>OVRk SWPk</td><td>a b c b c b b c</td></tr>
-// <tr><td>OVRk SWPk OVR</td><td>a b c b c b b c b</td></tr>
-// <tr><td>OVRk SWPk OVRk</td><td>a b c b c b b c b c b</td></tr>
-// <tr><td>OVRk SWPk DUP</td><td>a b c b c b b c c</td></tr>
-// <tr><td>OVRk SWPk SWPk</td><td>a b c b c b b c c b</td></tr>
-// <tr><td>OVRk SWPk DUPk</td><td>a b c b c b b c c c</td></tr>
-// <tr><td>OVR OVRk</td><td>a b c b c b c</td></tr>
-// <tr><td>OVR OVR OVRk</td><td>a b c b c b c b</td></tr>
-// <tr><td>OVRk ROTk</td><td>a b c b c b c b b</td></tr>
-// <tr><td>OVRk ROTk DUP</td><td>a b c b c b c b b b</td></tr>
-// <tr><td>OVRk ROTk DUPk</td><td>a b c b c b c b b b b</td></tr>
-// <tr><td>OVRk ROTk OVRk</td><td>a b c b c b c b b b b b</td></tr>
-// <tr><td>OVRk ROTk ROTk</td><td>a b c b c b c b b b b c</td></tr>
-// <tr><td>OVRk OVRk</td><td>a b c b c b c b c</td></tr>
-// <tr><td>OVR OVRk OVRk</td><td>a b c b c b c b c b</td></tr>
-// <tr><td>OVRk OVRk OVRk</td><td>a b c b c b c b c b c b</td></tr>
-// <tr><td>OVRk OVRk ROTk</td><td>a b c b c b c b c b c c</td></tr>
-// <tr><td>OVR OVRk ROTk</td><td>a b c b c b c b c c</td></tr>
-// <tr><td>OVRk OVRk SWPk</td><td>a b c b c b c b c c b</td></tr>
-// <tr><td>OVRk OVRk DUPk</td><td>a b c b c b c b c c c</td></tr>
-// <tr><td>OVR OVR ROTk</td><td>a b c b c b c c</td></tr>
-// <tr><td>OVR OVRk SWPk</td><td>a b c b c b c c b</td></tr>
-// <tr><td>OVR OVRk DUPk</td><td>a b c b c b c c c</td></tr>
-// <tr><td>OVR OVR DUP</td><td>a b c b c c</td></tr>
-// <tr><td>ROTk OVR SWP</td><td>a b c b c c a</td></tr>
-// <tr><td>OVR OVR SWPk</td><td>a b c b c c b</td></tr>
-// <tr><td>OVR OVR DUPk</td><td>a b c b c c c</td></tr>
-// <tr><td>DUP</td><td>a b c c</td></tr>
-// <tr><td>ROTk ROT POP</td><td>a b c c a</td></tr>
-// <tr><td>ROTk ROT</td><td>a b c c a b</td></tr>
-// <tr><td>ROTk ROT OVR</td><td>a b c c a b a</td></tr>
-// <tr><td>ROTk ROT OVRk</td><td>a b c c a b a b a</td></tr>
-// <tr><td>ROTk ROT ROTk</td><td>a b c c a b a b c</td></tr>
-// <tr><td>ROTk ROT DUP</td><td>a b c c a b b</td></tr>
-// <tr><td>ROTk ROT SWPk</td><td>a b c c a b b a</td></tr>
-// <tr><td>ROTk ROT DUPk</td><td>a b c c a b b b</td></tr>
-// <tr><td>SWPk</td><td>a b c c b</td></tr>
-// <tr><td>ROTk ROT SWP</td><td>a b c c b a</td></tr>
-// <tr><td>SWPk DUP</td><td>a b c c b b</td></tr>
-// <tr><td>SWPk DUPk</td><td>a b c c b b b</td></tr>
-// <tr><td>SWPk DUP DUPk</td><td>a b c c b b b b</td></tr>
-// <tr><td>SWPk DUP OVRk</td><td>a b c c b b b b b</td></tr>
-// <tr><td>SWPk DUPk OVRk</td><td>a b c c b b b b b b</td></tr>
-// <tr><td>SWPk DUP ROTk</td><td>a b c c b b b b c</td></tr>
-// <tr><td>SWPk SWPk</td><td>a b c c b b c</td></tr>
-// <tr><td>SWPk SWPk OVR</td><td>a b c c b b c b</td></tr>
-// <tr><td>SWPk SWPk OVRk</td><td>a b c c b b c b c b</td></tr>
-// <tr><td>SWPk SWPk DUP</td><td>a b c c b b c c</td></tr>
-// <tr><td>SWPk SWPk SWPk</td><td>a b c c b b c c b</td></tr>
-// <tr><td>SWPk SWPk DUPk</td><td>a b c c b b c c c</td></tr>
-// <tr><td>SWPk OVR</td><td>a b c c b c</td></tr>
-// <tr><td>SWPk OVR OVR</td><td>a b c c b c b</td></tr>
-// <tr><td>SWPk OVRk</td><td>a b c c b c b c</td></tr>
-// <tr><td>SWPk OVR OVRk</td><td>a b c c b c b c b</td></tr>
-// <tr><td>SWPk OVRk OVRk</td><td>a b c c b c b c b c b</td></tr>
-// <tr><td>SWPk OVRk ROTk</td><td>a b c c b c b c b c c</td></tr>
-// <tr><td>SWPk OVR ROTk</td><td>a b c c b c b c c</td></tr>
-// <tr><td>SWPk OVRk SWPk</td><td>a b c c b c b c c b</td></tr>
-// <tr><td>SWPk OVRk DUPk</td><td>a b c c b c b c c c</td></tr>
-// <tr><td>SWPk OVR DUP</td><td>a b c c b c c</td></tr>
-// <tr><td>SWPk OVR SWPk</td><td>a b c c b c c b</td></tr>
-// <tr><td>SWPk OVR DUPk</td><td>a b c c b c c c</td></tr>
-// <tr><td>DUPk</td><td>a b c c c</td></tr>
-// <tr><td>DUP ROTk NIP</td><td>a b c c c b</td></tr>
-// <tr><td>DUP ROTk SWP</td><td>a b c c c b c</td></tr>
-// <tr><td>DUP DUPk</td><td>a b c c c c</td></tr>
-// <tr><td>DUP ROTk</td><td>a b c c c c b</td></tr>
-// <tr><td>DUP ROTk DUP</td><td>a b c c c c b b</td></tr>
-// <tr><td>DUP ROTk DUPk</td><td>a b c c c c b b b</td></tr>
-// <tr><td>DUP ROTk SWPk</td><td>a b c c c c b b c</td></tr>
-// <tr><td>DUP ROTk OVR</td><td>a b c c c c b c</td></tr>
-// <tr><td>DUP ROTk OVRk</td><td>a b c c c c b c b c</td></tr>
-// <tr><td>DUP OVRk</td><td>a b c c c c c</td></tr>
-// <tr><td>DUPk OVRk</td><td>a b c c c c c c</td></tr>
-// <tr><td>DUP DUPk OVRk</td><td>a b c c c c c c c</td></tr>
-// <tr><td>DUP OVRk OVRk</td><td>a b c c c c c c c c</td></tr>
-// <tr><td>DUPk OVRk OVRk</td><td>a b c c c c c c c c c</td></tr>
-// <tr><td>NIP</td><td>a c</td></tr>
-// <tr><td>NIP OVR</td><td>a c a</td></tr>
-// <tr><td>NIP OVR DUP</td><td>a c a a</td></tr>
-// <tr><td>NIP OVR DUPk</td><td>a c a a a</td></tr>
-// <tr><td>NIP OVR SWPk</td><td>a c a a c</td></tr>
-// <tr><td>NIP OVR OVR</td><td>a c a c</td></tr>
-// <tr><td>NIP OVRk</td><td>a c a c a</td></tr>
-// <tr><td>NIP OVR ROTk</td><td>a c a c a a</td></tr>
-// <tr><td>NIP OVRk DUPk</td><td>a c a c a a a</td></tr>
-// <tr><td>NIP OVRk SWPk</td><td>a c a c a a c</td></tr>
-// <tr><td>NIP OVR OVRk</td><td>a c a c a c</td></tr>
-// <tr><td>NIP OVRk ROTk</td><td>a c a c a c a a</td></tr>
-// <tr><td>NIP OVRk OVRk</td><td>a c a c a c a c</td></tr>
-// <tr><td>SWP</td><td>a c b</td></tr>
-// <tr><td>SWP DUP</td><td>a c b b</td></tr>
-// <tr><td>SWP ROTk ROT</td><td>a c b b a c</td></tr>
-// <tr><td>SWP DUPk</td><td>a c b b b</td></tr>
-// <tr><td>SWP DUP DUPk</td><td>a c b b b b</td></tr>
-// <tr><td>SWP DUP OVRk</td><td>a c b b b b b</td></tr>
-// <tr><td>SWP DUPk OVRk</td><td>a c b b b b b b</td></tr>
-// <tr><td>SWP DUP ROTk</td><td>a c b b b b c</td></tr>
-// <tr><td>SWP SWPk</td><td>a c b b c</td></tr>
-// <tr><td>SWP SWPk OVR</td><td>a c b b c b</td></tr>
-// <tr><td>SWP SWPk OVRk</td><td>a c b b c b c b</td></tr>
-// <tr><td>SWP SWPk DUP</td><td>a c b b c c</td></tr>
-// <tr><td>SWP SWPk SWPk</td><td>a c b b c c b</td></tr>
-// <tr><td>SWP SWPk DUPk</td><td>a c b b c c c</td></tr>
-// <tr><td>SWP OVR</td><td>a c b c</td></tr>
-// <tr><td>SWP ROTk NIP</td><td>a c b c a</td></tr>
-// <tr><td>SWP ROTk SWP</td><td>a c b c a b</td></tr>
-// <tr><td>SWP OVR OVR</td><td>a c b c b</td></tr>
-// <tr><td>SWP ROTk</td><td>a c b c b a</td></tr>
-// <tr><td>SWP ROTk DUP</td><td>a c b c b a a</td></tr>
-// <tr><td>SWP ROTk DUPk</td><td>a c b c b a a a</td></tr>
-// <tr><td>SWP ROTk SWPk</td><td>a c b c b a a b</td></tr>
-// <tr><td>SWP ROTk OVR</td><td>a c b c b a b</td></tr>
-// <tr><td>SWP ROTk OVRk</td><td>a c b c b a b a b</td></tr>
-// <tr><td>SWP ROTk ROTk</td><td>a c b c b a b a c</td></tr>
-// <tr><td>SWP OVRk</td><td>a c b c b c</td></tr>
-// <tr><td>SWP OVR OVRk</td><td>a c b c b c b</td></tr>
-// <tr><td>SWP OVRk OVRk</td><td>a c b c b c b c b</td></tr>
-// <tr><td>SWP OVRk ROTk</td><td>a c b c b c b c c</td></tr>
-// <tr><td>SWP OVR ROTk</td><td>a c b c b c c</td></tr>
-// <tr><td>SWP OVRk SWPk</td><td>a c b c b c c b</td></tr>
-// <tr><td>SWP OVRk DUPk</td><td>a c b c b c c c</td></tr>
-// <tr><td>SWP OVR DUP</td><td>a c b c c</td></tr>
-// <tr><td>SWP OVR SWPk</td><td>a c b c c b</td></tr>
-// <tr><td>SWP OVR DUPk</td><td>a c b c c c</td></tr>
-// <tr><td>NIP DUP</td><td>a c c</td></tr>
-// <tr><td>NIP SWPk</td><td>a c c a</td></tr>
-// <tr><td>NIP SWPk DUP</td><td>a c c a a</td></tr>
-// <tr><td>NIP SWPk DUPk</td><td>a c c a a a</td></tr>
-// <tr><td>NIP SWPk SWPk</td><td>a c c a a c</td></tr>
-// <tr><td>NIP SWPk OVR</td><td>a c c a c</td></tr>
-// <tr><td>NIP SWPk OVRk</td><td>a c c a c a c</td></tr>
-// <tr><td>DUP ROT</td><td>a c c b</td></tr>
-// <tr><td>DUP ROT DUP</td><td>a c c b b</td></tr>
-// <tr><td>DUP ROT DUPk</td><td>a c c b b b</td></tr>
-// <tr><td>DUP ROT SWPk</td><td>a c c b b c</td></tr>
-// <tr><td>DUP ROT OVR</td><td>a c c b c</td></tr>
-// <tr><td>DUP ROT OVRk</td><td>a c c b c b c</td></tr>
-// <tr><td>NIP DUPk</td><td>a c c c</td></tr>
-// <tr><td>NIP DUP DUPk</td><td>a c c c c</td></tr>
-// <tr><td>NIP DUP ROTk</td><td>a c c c c a</td></tr>
-// <tr><td>NIP DUP OVRk</td><td>a c c c c c</td></tr>
-// <tr><td>NIP DUPk OVRk</td><td>a c c c c c c</td></tr>
-// <tr><td>POP NIP</td><td>b</td></tr>
-// <tr><td>POP SWP</td><td>b a</td></tr>
-// <tr><td>POP SWP DUP</td><td>b a a</td></tr>
-// <tr><td>POP SWP DUPk</td><td>b a a a</td></tr>
-// <tr><td>POP SWP SWPk</td><td>b a a b</td></tr>
-// <tr><td>ROT DUP ROT</td><td>b a a c</td></tr>
-// <tr><td>POP SWP OVR</td><td>b a b</td></tr>
-// <tr><td>POP SWP OVRk</td><td>b a b a b</td></tr>
-// <tr><td>ROT SWP</td><td>b a c</td></tr>
-// <tr><td>ROT SWP OVR</td><td>b a c a</td></tr>
-// <tr><td>ROT SWP OVRk</td><td>b a c a c a</td></tr>
-// <tr><td>ROT SWP ROTk</td><td>b a c a c b</td></tr>
-// <tr><td>ROT SWP DUP</td><td>b a c c</td></tr>
-// <tr><td>ROT SWP SWPk</td><td>b a c c a</td></tr>
-// <tr><td>ROT SWP DUPk</td><td>b a c c c</td></tr>
-// <tr><td>POP NIP DUP</td><td>b b</td></tr>
-// <tr><td>POP DUP ROT</td><td>b b a</td></tr>
-// <tr><td>POP NIP DUPk</td><td>b b b</td></tr>
-// <tr><td>ROT POP</td><td>b c</td></tr>
-// <tr><td>ROT</td><td>b c a</td></tr>
-// <tr><td>ROT DUP</td><td>b c a a</td></tr>
-// <tr><td>ROT DUPk</td><td>b c a a a</td></tr>
-// <tr><td>ROT DUP DUPk</td><td>b c a a a a</td></tr>
-// <tr><td>ROT DUP OVRk</td><td>b c a a a a a</td></tr>
-// <tr><td>ROT DUPk OVRk</td><td>b c a a a a a a</td></tr>
-// <tr><td>ROT DUP ROTk</td><td>b c a a a a c</td></tr>
-// <tr><td>ROT ROTk ROT</td><td>b c a a b c</td></tr>
-// <tr><td>ROT SWPk</td><td>b c a a c</td></tr>
-// <tr><td>ROT SWPk OVR</td><td>b c a a c a</td></tr>
-// <tr><td>ROT SWPk OVRk</td><td>b c a a c a c a</td></tr>
-// <tr><td>ROT SWPk DUP</td><td>b c a a c c</td></tr>
-// <tr><td>ROT SWPk SWPk</td><td>b c a a c c a</td></tr>
-// <tr><td>ROT SWPk DUPk</td><td>b c a a c c c</td></tr>
-// <tr><td>ROT OVR</td><td>b c a c</td></tr>
-// <tr><td>ROT OVR OVR</td><td>b c a c a</td></tr>
-// <tr><td>ROT ROTk</td><td>b c a c a b</td></tr>
-// <tr><td>ROT ROTk OVR</td><td>b c a c a b a</td></tr>
-// <tr><td>ROT ROTk OVRk</td><td>b c a c a b a b a</td></tr>
-// <tr><td>ROT ROTk ROTk</td><td>b c a c a b a b c</td></tr>
-// <tr><td>ROT ROTk DUP</td><td>b c a c a b b</td></tr>
-// <tr><td>ROT ROTk SWPk</td><td>b c a c a b b a</td></tr>
-// <tr><td>ROT ROTk DUPk</td><td>b c a c a b b b</td></tr>
-// <tr><td>ROT OVRk</td><td>b c a c a c</td></tr>
-// <tr><td>ROT OVR OVRk</td><td>b c a c a c a</td></tr>
-// <tr><td>ROT OVRk OVRk</td><td>b c a c a c a c a</td></tr>
-// <tr><td>ROT OVRk ROTk</td><td>b c a c a c a c c</td></tr>
-// <tr><td>ROT OVR ROTk</td><td>b c a c a c c</td></tr>
-// <tr><td>ROT OVRk SWPk</td><td>b c a c a c c a</td></tr>
-// <tr><td>ROT OVRk DUPk</td><td>b c a c a c c c</td></tr>
-// <tr><td>ROT ROTk NIP</td><td>b c a c b</td></tr>
-// <tr><td>ROT ROTk SWP</td><td>b c a c b a</td></tr>
-// <tr><td>ROT OVR DUP</td><td>b c a c c</td></tr>
-// <tr><td>ROT OVR SWPk</td><td>b c a c c a</td></tr>
-// <tr><td>ROT OVR DUPk</td><td>b c a c c c</td></tr>
-// <tr><td>ROT POP OVR</td><td>b c b</td></tr>
-// <tr><td>ROT POP OVRk</td><td>b c b c b</td></tr>
-// <tr><td>ROT POP DUP</td><td>b c c</td></tr>
-// <tr><td>ROT OVR SWP</td><td>b c c a</td></tr>
-// <tr><td>ROT POP SWPk</td><td>b c c b</td></tr>
-// <tr><td>ROT POP DUPk</td><td>b c c c</td></tr>
-// <tr><td>NIP NIP</td><td>c</td></tr>
-// <tr><td>NIP SWP</td><td>c a</td></tr>
-// <tr><td>NIP SWP DUP</td><td>c a a</td></tr>
-// <tr><td>NIP SWP DUPk</td><td>c a a a</td></tr>
-// <tr><td>NIP SWP SWPk</td><td>c a a c</td></tr>
-// <tr><td>ROT ROT</td><td>c a b</td></tr>
-// <tr><td>ROT ROT OVR</td><td>c a b a</td></tr>
-// <tr><td>ROT ROT OVRk</td><td>c a b a b a</td></tr>
-// <tr><td>ROT ROT ROTk</td><td>c a b a b c</td></tr>
-// <tr><td>ROT ROT DUP</td><td>c a b b</td></tr>
-// <tr><td>ROT ROT SWPk</td><td>c a b b a</td></tr>
-// <tr><td>ROT ROT DUPk</td><td>c a b b b</td></tr>
-// <tr><td>NIP SWP OVR</td><td>c a c</td></tr>
-// <tr><td>NIP SWP OVRk</td><td>c a c a c</td></tr>
-// <tr><td>SWP ROT POP</td><td>c b</td></tr>
-// <tr><td>SWP ROT</td><td>c b a</td></tr>
-// <tr><td>SWP ROT DUP</td><td>c b a a</td></tr>
-// <tr><td>SWP ROT DUPk</td><td>c b a a a</td></tr>
-// <tr><td>SWP ROT SWPk</td><td>c b a a b</td></tr>
-// <tr><td>SWP ROT OVR</td><td>c b a b</td></tr>
-// <tr><td>SWP ROT OVRk</td><td>c b a b a b</td></tr>
-// <tr><td>SWP ROT ROTk</td><td>c b a b a c</td></tr>
-// <tr><td>NIP NIP DUP</td><td>c c</td></tr>
-// <tr><td>NIP DUP ROT</td><td>c c a</td></tr>
-// <tr><td>NIP NIP DUPk</td><td>c c c</td></tr>
