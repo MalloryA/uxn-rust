@@ -4,9 +4,17 @@ mod tests {
 
     fn call(stack: &mut Stack, command: &str) {
         match command {
-            "POP" => stack.pop(),
+            "POP" => {
+                stack.pop();
+            }
+            "DUP" => {
+                stack.dup();
+            }
+            "DUPk" => {
+                stack.dupk();
+            }
             _ => todo!("{}", command),
-        };
+        }
     }
 
     macro_rules! try_stack {

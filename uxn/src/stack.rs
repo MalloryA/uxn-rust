@@ -14,4 +14,14 @@ impl Stack {
     pub fn pop(&mut self) -> Option<u8> {
         self.vec.pop()
     }
+
+    pub fn dup(&mut self) {
+        self.vec.push(*self.vec.last().unwrap())
+    }
+
+    pub fn dupk(&mut self) {
+        let value = *self.vec.last().unwrap();
+        self.vec.push(value);
+        self.vec.push(value);
+    }
 }
