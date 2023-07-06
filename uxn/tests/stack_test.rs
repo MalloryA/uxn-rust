@@ -13,6 +13,9 @@ mod tests {
             "DUPk" => {
                 stack.dupk().unwrap();
             }
+            "OVR" => {
+                stack.ovr().unwrap();
+            }
             _ => todo!("{}", command),
         }
     }
