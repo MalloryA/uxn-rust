@@ -13,10 +13,6 @@ impl Stack {
         self.vec
     }
 
-    fn _pop(&mut self) -> Result<u8, Error> {
-        self._remove(1)
-    }
-
     fn _remove(&mut self, offset: usize) -> Result<u8, Error> {
         if offset > self.vec.len() {
             Err(Error::Underflow)
@@ -26,8 +22,17 @@ impl Stack {
         }
     }
 
+    fn _get(&mut self, offset: usize) -> Result<u8, Error> {
+        if offset > self.vec.len() {
+            Err(Error::Underflow)
+        } else {
+            let index = self.vec.len() - offset;
+            Ok(*self.vec.get(index).unwrap())
+        }
+    }
+
     pub fn pop(&mut self) -> Result<(), Error> {
-        match self._pop() {
+        match self._remove(1) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
@@ -41,32 +46,22 @@ impl Stack {
     }
 
     pub fn ovr(&mut self) -> Result<(), Error> {
-        if self.vec.len() < 2 {
-            Err(Error::Underflow)
-        } else {
-            let value = self.vec.get(self.vec.len() - 2).unwrap();
-            self.vec.push(*value);
-            Ok(())
-        }
+        let value = self._get(2)?;
+        self.vec.push(value);
+        Ok(())
     }
 
     pub fn ovrk(&mut self) -> Result<(), Error> {
-        if self.vec.len() < 2 {
-            Err(Error::Underflow)
-        } else {
-            let value = self.vec.get(self.vec.len() - 2).unwrap();
-            self.vec.push(*value);
-            let value = self.vec.get(self.vec.len() - 2).unwrap();
-            self.vec.push(*value);
-            let value = self.vec.get(self.vec.len() - 2).unwrap();
-            self.vec.push(*value);
-            Ok(())
-        }
+        let a = self._get(1)?;
+        let b = self._get(2)?;
+        self.vec.push(b);
+        self.vec.push(a);
+        self.vec.push(b);
+        Ok(())
     }
 
     pub fn dup(&mut self) -> Result<(), Error> {
-        let value = self._pop()?;
-        self.vec.push(value);
+        let value = self._get(1)?;
         self.vec.push(value);
         Ok(())
     }
@@ -78,29 +73,17 @@ impl Stack {
     }
 
     pub fn swp(&mut self) -> Result<(), Error> {
-        if self.vec.len() < 2 {
-            Err(Error::Underflow)
-        } else {
-            let a = self._pop()?;
-            let b = self._pop()?;
-            self.vec.push(a);
-            self.vec.push(b);
-            Ok(())
-        }
+        let value = self._remove(2)?;
+        self.vec.push(value);
+        Ok(())
     }
 
     pub fn swpk(&mut self) -> Result<(), Error> {
-        if self.vec.len() < 2 {
-            Err(Error::Underflow)
-        } else {
-            let a = self._pop()?;
-            let b = self._pop()?;
-            self.vec.push(b);
-            self.vec.push(a);
-            self.vec.push(a);
-            self.vec.push(b);
-            Ok(())
-        }
+        let a = self._get(1)?;
+        let b = self._get(2)?;
+        self.vec.push(a);
+        self.vec.push(b);
+        Ok(())
     }
 }
 
