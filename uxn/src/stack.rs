@@ -85,6 +85,16 @@ impl Stack {
         self.vec.push(b);
         Ok(())
     }
+
+    pub fn rotk(&mut self) -> Result<(), Error> {
+        let a = self._get(1)?;
+        let b = self._get(2)?;
+        let c = self._get(3)?;
+        self.vec.push(b);
+        self.vec.push(a);
+        self.vec.push(c);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -236,6 +246,34 @@ mod tests {
     fn swpk_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.swpk());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn rotk_three_values() {
+        let mut stack = Stack::new(vec![1, 2, 3]);
+        assert_eq!(Ok(()), stack.rotk());
+        assert_eq!(vec!(1, 2, 3, 2, 3, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn rotk_two_values() {
+        let mut stack = Stack::new(vec![1, 2]);
+        assert_eq!(Err(Error::Underflow), stack.rotk());
+        assert_eq!(vec!(1, 2), stack.as_vec());
+    }
+
+    #[test]
+    fn rotk_one_value() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Err(Error::Underflow), stack.rotk());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn rotk_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.rotk());
         assert_eq!(EMPTY, stack.as_vec());
     }
 }

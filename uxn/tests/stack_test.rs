@@ -12,6 +12,7 @@ mod tests {
             "SWP" => stack.swp(),
             "SWPk" => stack.swpk(),
             "NIP" => stack.nip(),
+            "ROTk" => stack.rotk(),
             _ => todo!("{}", command),
         };
         result.unwrap();
