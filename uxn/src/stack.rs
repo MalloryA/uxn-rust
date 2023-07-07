@@ -86,6 +86,12 @@ impl Stack {
         Ok(())
     }
 
+    pub fn rot(&mut self) -> Result<(), Error> {
+        let value = self._remove(3)?;
+        self.vec.push(value);
+        Ok(())
+    }
+
     pub fn rotk(&mut self) -> Result<(), Error> {
         let a = self._get(1)?;
         let b = self._get(2)?;
@@ -274,6 +280,34 @@ mod tests {
     fn rotk_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.rotk());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn rot_three_values() {
+        let mut stack = Stack::new(vec![1, 2, 3]);
+        assert_eq!(Ok(()), stack.rot());
+        assert_eq!(vec!(2, 3, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn rot_two_values() {
+        let mut stack = Stack::new(vec![1, 2]);
+        assert_eq!(Err(Error::Underflow), stack.rot());
+        assert_eq!(vec!(1, 2), stack.as_vec());
+    }
+
+    #[test]
+    fn rot_one_value() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Err(Error::Underflow), stack.rot());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn rot_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.rot());
         assert_eq!(EMPTY, stack.as_vec());
     }
 }
