@@ -4,6 +4,8 @@ pub struct Stack {
     vec: Vec<u8>,
 }
 
+pub const MAX: usize = 255;
+
 impl Stack {
     pub fn new(vec: Vec<u8>) -> Stack {
         Stack { vec }
@@ -31,6 +33,15 @@ impl Stack {
         }
     }
 
+    fn _append(&mut self, mut values: Vec<u8>) -> Result<(), Error> {
+        if self.vec.len() + values.len() > MAX {
+            Err(Error::Overflow)
+        } else {
+            self.vec.append(&mut values);
+            Ok(())
+        }
+    }
+
     pub fn pop(&mut self) -> Result<(), Error> {
         match self._remove(1) {
             Ok(_) => Ok(()),
@@ -55,28 +66,26 @@ impl Stack {
 
     pub fn ovr(&mut self) -> Result<(), Error> {
         let value = self._get(2)?;
-        self.vec.push(value);
+        self._append(vec![value])?;
         Ok(())
     }
 
     pub fn ovrk(&mut self) -> Result<(), Error> {
         let a = self._get(1)?;
         let b = self._get(2)?;
-        self.vec.push(b);
-        self.vec.push(a);
-        self.vec.push(b);
+        self._append(vec![b, a, b])?;
         Ok(())
     }
 
     pub fn dup(&mut self) -> Result<(), Error> {
         let value = self._get(1)?;
-        self.vec.push(value);
+        self._append(vec![value])?;
         Ok(())
     }
 
     pub fn dupk(&mut self) -> Result<(), Error> {
-        self.dup()?;
-        self.dup()?;
+        let value = self._get(1)?;
+        self._append(vec![value, value])?;
         Ok(())
     }
 
@@ -89,8 +98,7 @@ impl Stack {
     pub fn swpk(&mut self) -> Result<(), Error> {
         let a = self._get(1)?;
         let b = self._get(2)?;
-        self.vec.push(a);
-        self.vec.push(b);
+        self._append(vec![a, b])?;
         Ok(())
     }
 
@@ -104,9 +112,7 @@ impl Stack {
         let a = self._get(1)?;
         let b = self._get(2)?;
         let c = self._get(3)?;
-        self.vec.push(b);
-        self.vec.push(a);
-        self.vec.push(c);
+        self._append(vec![b, a, c])?;
         Ok(())
     }
 }
@@ -152,6 +158,13 @@ mod tests {
     }
 
     #[test]
+    fn dup_full() {
+        let mut stack = Stack::new(vec![1; MAX]);
+        assert_eq!(Err(Error::Overflow), stack.dup());
+        assert_eq!(vec!(1; MAX), stack.as_vec());
+    }
+
+    #[test]
     fn dup_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.dup());
@@ -166,6 +179,13 @@ mod tests {
     }
 
     #[test]
+    fn dupk_full() {
+        let mut stack = Stack::new(vec![1; MAX - 1]);
+        assert_eq!(Err(Error::Overflow), stack.dupk());
+        assert_eq!(vec!(1; MAX - 1), stack.as_vec());
+    }
+
+    #[test]
     fn dupk_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.dupk());
@@ -177,6 +197,13 @@ mod tests {
         let mut stack = Stack::new(vec![1, 2]);
         assert_eq!(Ok(()), stack.ovr());
         assert_eq!(vec!(1, 2, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn ovr_full() {
+        let mut stack = Stack::new(vec![1; MAX]);
+        assert_eq!(Err(Error::Overflow), stack.ovr());
+        assert_eq!(vec!(1; MAX), stack.as_vec());
     }
 
     #[test]
@@ -198,6 +225,13 @@ mod tests {
         let mut stack = Stack::new(vec![1, 2]);
         assert_eq!(Ok(()), stack.ovrk());
         assert_eq!(vec!(1, 2, 1, 2, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn ovrk_full() {
+        let mut stack = Stack::new(vec![1; MAX - 2]);
+        assert_eq!(Err(Error::Overflow), stack.ovrk());
+        assert_eq!(vec!(1; MAX - 2), stack.as_vec());
     }
 
     #[test]
@@ -264,6 +298,13 @@ mod tests {
     }
 
     #[test]
+    fn swpk_full() {
+        let mut stack = Stack::new(vec![1; MAX - 1]);
+        assert_eq!(Err(Error::Overflow), stack.swpk());
+        assert_eq!(vec!(1; MAX - 1), stack.as_vec());
+    }
+
+    #[test]
     fn swpk_one_value() {
         let mut stack = Stack::new(vec![1]);
         assert_eq!(Err(Error::Underflow), stack.swpk());
@@ -282,6 +323,13 @@ mod tests {
         let mut stack = Stack::new(vec![1, 2, 3]);
         assert_eq!(Ok(()), stack.rotk());
         assert_eq!(vec!(1, 2, 3, 2, 3, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn rotk_full() {
+        let mut stack = Stack::new(vec![1; MAX - 2]);
+        assert_eq!(Err(Error::Overflow), stack.rotk());
+        assert_eq!(vec!(1; MAX - 2), stack.as_vec());
     }
 
     #[test]
