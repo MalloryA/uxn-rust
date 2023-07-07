@@ -3,24 +3,15 @@ mod tests {
     use uxn::stack::Stack;
 
     fn call(stack: &mut Stack, command: &str) {
-        match command {
-            "POP" => {
-                stack.pop().unwrap();
-            }
-            "DUP" => {
-                stack.dup().unwrap();
-            }
-            "DUPk" => {
-                stack.dupk().unwrap();
-            }
-            "OVR" => {
-                stack.ovr().unwrap();
-            }
-            "SWP" => {
-                stack.swp().unwrap();
-            }
+        let result = match command {
+            "POP" => stack.pop(),
+            "DUP" => stack.dup(),
+            "DUPk" => stack.dupk(),
+            "OVR" => stack.ovr(),
+            "SWP" => stack.swp(),
             _ => todo!("{}", command),
-        }
+        };
+        result.unwrap();
     }
 
     macro_rules! try_stack {
