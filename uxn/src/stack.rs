@@ -13,10 +13,17 @@ impl Stack {
         self.vec
     }
 
-    pub fn pop(&mut self) -> Result<u8, Error> {
+    fn _pop(&mut self) -> Result<u8, Error> {
         match self.vec.pop() {
             Some(value) => Ok(value),
             None => Err(Error::Underflow),
+        }
+    }
+
+    pub fn pop(&mut self) -> Result<(), Error> {
+        match self._pop() {
+            Ok(value) => Ok(()),
+            Err(err) => Err(err),
         }
     }
 
@@ -31,7 +38,7 @@ impl Stack {
     }
 
     pub fn dup(&mut self) -> Result<(), Error> {
-        let value = self.pop()?;
+        let value = self._pop()?;
         self.vec.push(value);
         self.vec.push(value);
         Ok(())
@@ -47,8 +54,8 @@ impl Stack {
         if self.vec.len() < 2 {
             Err(Error::Underflow)
         } else {
-            let a = self.pop()?;
-            let b = self.pop()?;
+            let a = self._pop()?;
+            let b = self._pop()?;
             self.vec.push(a);
             self.vec.push(b);
             Ok(())
@@ -64,7 +71,7 @@ mod tests {
     #[test]
     fn pop_non_empty() {
         let mut stack = Stack::new(vec![1]);
-        assert_eq!(Ok(1), stack.pop());
+        assert_eq!(Ok(()), stack.pop());
         assert_eq!(EMPTY, stack.as_vec());
     }
 
