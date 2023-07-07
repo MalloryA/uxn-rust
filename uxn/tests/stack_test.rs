@@ -9,6 +9,7 @@ mod tests {
             "DUPk" => stack.dupk(),
             "OVR" => stack.ovr(),
             "SWP" => stack.swp(),
+            "SWPk" => stack.swpk(),
             "NIP" => stack.nip(),
             _ => todo!("{}", command),
         };
