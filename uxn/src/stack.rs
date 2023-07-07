@@ -22,7 +22,7 @@ impl Stack {
 
     pub fn pop(&mut self) -> Result<(), Error> {
         match self._pop() {
-            Ok(value) => Ok(()),
+            Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
     }
