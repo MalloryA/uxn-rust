@@ -14,14 +14,27 @@ impl Stack {
     }
 
     fn _pop(&mut self) -> Result<u8, Error> {
-        match self.vec.pop() {
-            Some(value) => Ok(value),
-            None => Err(Error::Underflow),
+        self._remove(1)
+    }
+
+    fn _remove(&mut self, offset: usize) -> Result<u8, Error> {
+        if offset > self.vec.len() {
+            Err(Error::Underflow)
+        } else {
+            let index = self.vec.len() - offset;
+            Ok(self.vec.remove(index))
         }
     }
 
     pub fn pop(&mut self) -> Result<(), Error> {
         match self._pop() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
+
+    pub fn nip(&mut self) -> Result<(), Error> {
+        match self._remove(2) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
@@ -149,6 +162,27 @@ mod tests {
     fn swp_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.swp());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn nip_two_values() {
+        let mut stack = Stack::new(vec![1, 2]);
+        assert_eq!(Ok(()), stack.nip());
+        assert_eq!(vec!(2), stack.as_vec());
+    }
+
+    #[test]
+    fn nip_one_value() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Err(Error::Underflow), stack.nip());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn nip_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.nip());
         assert_eq!(EMPTY, stack.as_vec());
     }
 }
