@@ -38,6 +38,14 @@ impl Stack {
         }
     }
 
+    pub fn popk(&mut self) -> Result<(), Error> {
+        if self.vec.len() == 0 {
+            Err(Error::Underflow)
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn nip(&mut self) -> Result<(), Error> {
         match self._remove(2) {
             Ok(_) => Ok(()),
@@ -119,6 +127,20 @@ mod tests {
     fn pop_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.pop());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn popk_non_empty() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Ok(()), stack.popk());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn popk_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.popk());
         assert_eq!(EMPTY, stack.as_vec());
     }
 

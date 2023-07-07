@@ -5,6 +5,7 @@ mod tests {
     fn call(stack: &mut Stack, command: &str) {
         let result = match command {
             "POP" => stack.pop(),
+            "POPk" => stack.popk(),
             "DUP" => stack.dup(),
             "DUPk" => stack.dupk(),
             "OVR" => stack.ovr(),
