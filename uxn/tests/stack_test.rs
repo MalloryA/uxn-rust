@@ -8,6 +8,7 @@ mod tests {
             "DUP" => stack.dup(),
             "DUPk" => stack.dupk(),
             "OVR" => stack.ovr(),
+            "OVRk" => stack.ovrk(),
             "SWP" => stack.swp(),
             "SWPk" => stack.swpk(),
             "NIP" => stack.nip(),

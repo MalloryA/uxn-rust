@@ -50,6 +50,20 @@ impl Stack {
         }
     }
 
+    pub fn ovrk(&mut self) -> Result<(), Error> {
+        if self.vec.len() < 2 {
+            Err(Error::Underflow)
+        } else {
+            let value = self.vec.get(self.vec.len() - 2).unwrap();
+            self.vec.push(*value);
+            let value = self.vec.get(self.vec.len() - 2).unwrap();
+            self.vec.push(*value);
+            let value = self.vec.get(self.vec.len() - 2).unwrap();
+            self.vec.push(*value);
+            Ok(())
+        }
+    }
+
     pub fn dup(&mut self) -> Result<(), Error> {
         let value = self._pop()?;
         self.vec.push(value);
@@ -155,6 +169,27 @@ mod tests {
     fn ovr_empty() {
         let mut stack = Stack::new(vec![]);
         assert_eq!(Err(Error::Underflow), stack.ovr());
+        assert_eq!(EMPTY, stack.as_vec());
+    }
+
+    #[test]
+    fn ovrk_two_values() {
+        let mut stack = Stack::new(vec![1, 2]);
+        assert_eq!(Ok(()), stack.ovrk());
+        assert_eq!(vec!(1, 2, 1, 2, 1), stack.as_vec());
+    }
+
+    #[test]
+    fn ovrk_one_value() {
+        let mut stack = Stack::new(vec![1]);
+        assert_eq!(Err(Error::Underflow), stack.ovrk());
+        assert_eq!(vec!(1), stack.as_vec());
+    }
+
+    #[test]
+    fn ovrk_empty() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Err(Error::Underflow), stack.ovrk());
         assert_eq!(EMPTY, stack.as_vec());
     }
 
