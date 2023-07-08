@@ -32,6 +32,7 @@ mod tests {
         }};
     }
 
+    // https://wiki.xxiivv.com/site/uxntal_stacking.html
     #[test]
     fn it_works() {
         try_stack!("POP POP", "a");
