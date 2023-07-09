@@ -1,3 +1,4 @@
+use crate::device_memory::DeviceMemory;
 use std::convert::TryFrom;
 
 pub struct Memory {
@@ -30,6 +31,17 @@ impl Memory {
         let b2 = (value & 0xff) as u8;
         self.write_byte(address, b1);
         self.write_byte(address + 1, b2);
+    }
+
+    pub fn get_device_memory(&mut self, address: u8) -> DeviceMemory {
+        let address = address as usize;
+        let mut memory = [0; 0x10];
+        let mut i = 0;
+        for byte in &self.memory[address..address + 0x10] {
+            memory[i] = *byte;
+            i += 1;
+        }
+        DeviceMemory::new(memory)
     }
 }
 
