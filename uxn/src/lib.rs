@@ -1,4 +1,5 @@
 pub mod error;
+pub mod memory;
 pub mod stack;
 
 pub fn add(left: usize, right: usize) -> usize {
