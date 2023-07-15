@@ -1,6 +1,7 @@
 use crate::device_memory::DeviceMemory;
 use std::convert::TryFrom;
 
+#[derive(Clone)]
 pub struct Memory {
     memory: [u8; 0x10000],
 }
@@ -16,7 +17,7 @@ impl Memory {
         self.memory[usize::try_from(address).unwrap()]
     }
 
-    pub fn write_byte(&mut self, address: u32, value: u8) {
+    pub fn write_byte(&mut self, address: u16, value: u8) {
         self.memory[usize::try_from(address).unwrap()] = value;
     }
 
@@ -26,7 +27,7 @@ impl Memory {
         b1 << 8 | b2
     }
 
-    pub fn write_short(&mut self, address: u32, value: u16) {
+    pub fn write_short(&mut self, address: u16, value: u16) {
         let b1 = (value >> 8) as u8;
         let b2 = (value & 0xff) as u8;
         self.write_byte(address, b1);
