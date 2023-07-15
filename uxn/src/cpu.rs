@@ -1,14 +1,19 @@
 use crate::error::Error;
 use crate::memory::Memory;
+use crate::stack::Stack;
 
 pub struct Cpu {
     memory: Memory,
+    working_stack: Stack,
+    program_counter: u16,
 }
 
 impl Cpu {
     pub fn new() -> Cpu {
         Cpu {
             memory: Memory::new(),
+            working_stack: Stack::empty(),
+            program_counter: 0x100,
         }
     }
 
@@ -24,8 +29,31 @@ impl Cpu {
         Ok(())
     }
 
-    pub fn get_memory_clone(&self) -> Memory {
+    pub fn clone_memory(&self) -> Memory {
         self.memory.clone()
+    }
+
+    pub fn clone_working_stack(&self) -> Stack {
+        self.working_stack.clone()
+    }
+
+    pub fn get_program_counter(&self) -> u16 {
+        self.program_counter
+    }
+
+    pub fn tick(&mut self) -> Result<(), Error> {
+        let instruction = self.memory.read_byte(self.program_counter);
+        match instruction {
+            0x80 => {
+                let byte = self.memory.read_byte(self.program_counter + 1);
+                self.working_stack.push_byte(byte)?;
+                self.program_counter += 2;
+            }
+            _ => {
+                todo!();
+            }
+        }
+        Ok(())
     }
 }
 

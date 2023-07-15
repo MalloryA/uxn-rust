@@ -13,7 +13,7 @@ impl Memory {
         }
     }
 
-    pub fn read_byte(&self, address: u32) -> u8 {
+    pub fn read_byte(&self, address: u16) -> u8 {
         self.memory[usize::try_from(address).unwrap()]
     }
 
@@ -21,7 +21,7 @@ impl Memory {
         self.memory[usize::try_from(address).unwrap()] = value;
     }
 
-    pub fn read_short(&self, address: u32) -> u16 {
+    pub fn read_short(&self, address: u16) -> u16 {
         let b1 = self.read_byte(address) as u16;
         let b2 = self.read_byte(address + 1) as u16;
         b1 << 8 | b2

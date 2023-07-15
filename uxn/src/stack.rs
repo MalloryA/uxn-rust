@@ -1,5 +1,6 @@
 use crate::error::Error;
 
+#[derive(Clone)]
 pub struct Stack {
     vec: Vec<u8>,
 }
@@ -11,8 +12,16 @@ impl Stack {
         Stack { vec }
     }
 
+    pub fn empty() -> Stack {
+        Stack { vec: vec![] }
+    }
+
     pub fn as_vec(self) -> Vec<u8> {
         self.vec
+    }
+
+    pub fn push_byte(&mut self, byte: u8) -> Result<(), Error> {
+        self._append(vec![byte])
     }
 
     fn _remove(&mut self, offset: usize) -> Result<u8, Error> {
@@ -121,6 +130,20 @@ impl Stack {
 mod tests {
     use super::*;
     const EMPTY: Vec<u8> = vec![];
+
+    #[test]
+    fn push_byte() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Ok(()), stack.push_byte(1));
+        assert_eq!(vec![1], stack.as_vec());
+    }
+
+    #[test]
+    fn push_byte_full() {
+        let mut stack = Stack::new(vec![0; MAX]);
+        assert_eq!(Err(Error::Overflow), stack.push_byte(1));
+        assert_eq!(vec![0; MAX], stack.as_vec());
+    }
 
     #[test]
     fn pop_non_empty() {
