@@ -53,34 +53,87 @@ impl Cpu {
         self.program_counter
     }
 
+    // 8 bit op codes
+    const BRK: u8 = 0x00;
+    const LIT: u8 = 0x80;
+    const LIT2: u8 = 0xa0;
+    const LITr: u8 = 0xc0;
+    const LIT2r: u8 = 0xe0;
+
+    // 5 bit op codes
+    const POP: u8 = 0x02;
+
+    pub fn pop(&mut self, two: bool, k: bool, r: bool) -> Result<(), Error> {
+        let stack = if r {
+            &mut self.return_stack
+        } else {
+            &mut self.working_stack
+        };
+        if two {
+            if k {
+                stack.popk()?;
+                stack.popk()?;
+            } else {
+                stack.pop()?;
+                stack.pop()?;
+            }
+        } else {
+            if k {
+                stack.popk()?;
+            } else {
+                stack.pop()?;
+            }
+        }
+        Ok(())
+    }
+
+    fn mangle_instruction(instruction: u8) -> (bool, bool, bool) {
+        (
+            (0b1000_0000 & instruction >> 7) == 1,
+            (0b0100_0000 & instruction >> 6) == 1,
+            (0b0010_0000 & instruction >> 5) == 1,
+        )
+    }
+
     pub fn tick(&mut self) -> Result<(), Error> {
         let instruction = self.memory.read_byte(self.program_counter);
+
+        // 8 bit op codes
         match instruction {
-            0x00 => {
+            Self::BRK => {
                 return Err(Error::EndOfExecution);
             }
-            0x80 => {
+            Self::LIT => {
                 let byte = self.memory.read_byte(self.program_counter + 1);
                 self.working_stack.push_byte(byte)?;
                 self.program_counter += 2;
             }
-            0xa0 => {
+            Self::LIT2 => {
                 let short = self.memory.read_short(self.program_counter + 1);
                 self.working_stack.push_short(short)?;
                 self.program_counter += 3;
             }
-            0xc0 => {
+            Self::LITr => {
                 let byte = self.memory.read_byte(self.program_counter + 1);
                 self.return_stack.push_byte(byte)?;
                 self.program_counter += 2;
             }
-            0xe0 => {
+            Self::LIT2r => {
                 let short = self.memory.read_short(self.program_counter + 1);
                 self.return_stack.push_short(short)?;
                 self.program_counter += 3;
             }
             _ => {
-                todo!("{:x}", instruction);
+                // 5 bit op codes
+                let (two, k, r) = Self::mangle_instruction(instruction);
+                match instruction & 0x1f {
+                    Self::POP => {
+                        self.pop(two, k, r)?;
+                    }
+                    _ => {
+                        todo!("{:x}", instruction);
+                    }
+                }
             }
         }
         Ok(())
