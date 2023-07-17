@@ -59,7 +59,7 @@ impl Stack {
     }
 
     pub fn popk(&mut self) -> Result<(), Error> {
-        if self.vec.len() == 0 {
+        if self.vec.is_empty() {
             Err(Error::Underflow)
         } else {
             Ok(())

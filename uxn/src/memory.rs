@@ -6,6 +6,12 @@ pub struct Memory {
     memory: [u8; 0x10000],
 }
 
+impl Default for Memory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Memory {
     pub fn new() -> Memory {
         Memory {
@@ -37,10 +43,8 @@ impl Memory {
     pub fn get_device_memory(&mut self, address: u8) -> DeviceMemory {
         let address = address as usize;
         let mut memory = [0; 0x10];
-        let mut i = 0;
-        for byte in &self.memory[address..address + 0x10] {
+        for (i, byte) in self.memory[address..address + 0x10].iter().enumerate() {
             memory[i] = *byte;
-            i += 1;
         }
         DeviceMemory::new(memory)
     }
