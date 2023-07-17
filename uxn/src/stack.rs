@@ -24,6 +24,12 @@ impl Stack {
         self._append(vec![byte])
     }
 
+    pub fn push_short(&mut self, short: u16) -> Result<(), Error> {
+        let byte1 = short >> 8;
+        let byte2 = short & 0xff;
+        self._append(vec![byte1.try_into().unwrap(), byte2.try_into().unwrap()])
+    }
+
     fn _remove(&mut self, offset: usize) -> Result<u8, Error> {
         if offset > self.vec.len() {
             Err(Error::Underflow)
@@ -143,6 +149,20 @@ mod tests {
         let mut stack = Stack::new(vec![0; MAX]);
         assert_eq!(Err(Error::Overflow), stack.push_byte(1));
         assert_eq!(vec![0; MAX], stack.as_vec());
+    }
+
+    #[test]
+    fn push_short() {
+        let mut stack = Stack::new(vec![]);
+        assert_eq!(Ok(()), stack.push_short(1));
+        assert_eq!(vec![0, 1], stack.as_vec());
+    }
+
+    #[test]
+    fn push_short_full() {
+        let mut stack = Stack::new(vec![0; MAX - 1]);
+        assert_eq!(Err(Error::Overflow), stack.push_short(1));
+        assert_eq!(vec![0; MAX - 1], stack.as_vec());
     }
 
     #[test]

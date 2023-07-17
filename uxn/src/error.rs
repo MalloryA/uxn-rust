@@ -4,4 +4,5 @@ pub enum Error {
     Overflow = 0x02,
     DivisionByZero = 0x03,
     FailedToLoadRom = 0x04,
+    EndOfExecution = 0x05,
 }
