@@ -57,8 +57,8 @@ impl Cpu {
     const BRK: u8 = 0x00;
     const LIT: u8 = 0x80;
     const LIT2: u8 = 0xa0;
-    const LITr: u8 = 0xc0;
-    const LIT2r: u8 = 0xe0;
+    const LITR: u8 = 0xc0;
+    const LIT2R: u8 = 0xe0;
 
     // 5 bit op codes
     const POP: u8 = 0x02;
@@ -77,21 +77,19 @@ impl Cpu {
                 stack.pop()?;
                 stack.pop()?;
             }
+        } else if k {
+            stack.popk()?;
         } else {
-            if k {
-                stack.popk()?;
-            } else {
-                stack.pop()?;
-            }
+            stack.pop()?;
         }
         Ok(())
     }
 
     fn mangle_instruction(instruction: u8) -> (bool, bool, bool) {
         (
-            (0b1000_0000 & instruction >> 7) == 1,
-            (0b0100_0000 & instruction >> 6) == 1,
-            (0b0010_0000 & instruction >> 5) == 1,
+            ((0b1000_0000 & instruction) >> 7) == 1,
+            ((0b0100_0000 & instruction) >> 6) == 1,
+            ((0b0010_0000 & instruction) >> 5) == 1,
         )
     }
 
@@ -113,12 +111,12 @@ impl Cpu {
                 self.working_stack.push_short(short)?;
                 self.program_counter += 3;
             }
-            Self::LITr => {
+            Self::LITR => {
                 let byte = self.memory.read_byte(self.program_counter + 1);
                 self.return_stack.push_byte(byte)?;
                 self.program_counter += 2;
             }
-            Self::LIT2r => {
+            Self::LIT2R => {
                 let short = self.memory.read_short(self.program_counter + 1);
                 self.return_stack.push_short(short)?;
                 self.program_counter += 3;
@@ -179,8 +177,8 @@ mod tests {
         let mut cpu = cpu_load!(vec![
             0x80, 0x12, // LIT 12
             0xa0, 0x34, 0x56, // LIT2 3456
-            0xc0, 0x78, // LITr 78
-            0xe0, 0x9a, 0xbc, // LIT2r 9abc
+            0xc0, 0x78, // LITR 78
+            0xe0, 0x9a, 0xbc, // LIT2R 9abc
         ]);
         let result = cpu.run();
         assert!(result.is_ok(), "{:?}", result.unwrap_err());
