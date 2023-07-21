@@ -1,3 +1,4 @@
+mod opcodes;
 mod tokenizer;
 
 fn main() {
