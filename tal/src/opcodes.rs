@@ -54,7 +54,10 @@ fn parse_modifiers(s: &str) -> Result<(bool, bool, bool), &str> {
 }
 
 fn modify(byte: u8, two: bool, keep: bool, return_stack: bool) -> u8 {
-    byte
+    let two: u8 = if two { 1 } else { 0 } << 5;
+    let return_stack: u8 = if return_stack { 1 } else { 0 } << 6;
+    let keep: u8 = if keep { 1 } else { 0 } << 7;
+    byte | two | keep | return_stack
 }
 
 macro_rules! with_2r {
@@ -158,7 +161,7 @@ impl Opcode {
             Opcode::AND(two, keep, return_stack) => modify(0x1c, *two, *keep, *return_stack),
             Opcode::ORA(two, keep, return_stack) => modify(0x1d, *two, *keep, *return_stack),
             Opcode::EOR(two, keep, return_stack) => modify(0x1e, *two, *keep, *return_stack),
-            Opcode::SFT(two, keep, return_stack) => modify(0x2f, *two, *keep, *return_stack),
+            Opcode::SFT(two, keep, return_stack) => modify(0x1f, *two, *keep, *return_stack),
         }
     }
 }
@@ -172,10 +175,10 @@ mod tests {
             let result = Opcode::from_str($a);
             assert!(result.is_ok());
             let opcode = result.unwrap();
-            assert_eq!(opcode, $b);
+            assert_eq!(opcode, $b, "{}", $a);
 
             let byte = opcode.as_byte();
-            assert_eq!(byte, $c);
+            assert_eq!(byte, $c, "{}: expected 0x{:x} got 0x{:x}", $a, $c, byte);
         }};
     }
 
@@ -218,39 +221,39 @@ mod tests {
         assert_match!("AND", Opcode::AND(false, false, false), 0x1c);
         assert_match!("ORA", Opcode::ORA(false, false, false), 0x1d);
         assert_match!("EOR", Opcode::EOR(false, false, false), 0x1e);
-        assert_match!("SFT", Opcode::SFT(false, false, false), 0x2f);
+        assert_match!("SFT", Opcode::SFT(false, false, false), 0x1f);
         assert_match!("JCI", Opcode::JCI, 0x20);
-        assert_match!("INC2", Opcode::INC(false, false, true), 0x21);
-        assert_match!("POP2", Opcode::POP(false, false, true), 0x22);
-        assert_match!("NIP2", Opcode::NIP(false, false, true), 0x23);
-        assert_match!("SWP2", Opcode::SWP(false, false, true), 0x24);
-        assert_match!("ROT2", Opcode::ROT(false, false, true), 0x25);
-        assert_match!("DUP2", Opcode::DUP(false, false, true), 0x26);
-        assert_match!("OVR2", Opcode::OVR(false, false, true), 0x27);
-        assert_match!("EQU2", Opcode::EQU(false, false, true), 0x28);
-        assert_match!("NEQ2", Opcode::NEQ(false, false, true), 0x29);
-        assert_match!("GTH2", Opcode::GTH(false, false, true), 0x2a);
-        assert_match!("LTH2", Opcode::LTH(false, false, true), 0x2b);
-        assert_match!("JMP2", Opcode::JMP(false, false, true), 0x2c);
-        assert_match!("JCN2", Opcode::JCN(false, false, true), 0x2d);
-        assert_match!("JSR2", Opcode::JSR(false, false, true), 0x2e);
-        assert_match!("STH2", Opcode::STH(false, false, true), 0x2f);
-        assert_match!("LDZ2", Opcode::LDZ(false, false, true), 0x30);
-        assert_match!("STZ2", Opcode::STZ(false, false, true), 0x31);
-        assert_match!("LDR2", Opcode::LDR(false, false, true), 0x32);
-        assert_match!("STR2", Opcode::STR(false, false, true), 0x33);
-        assert_match!("LDA2", Opcode::LDA(false, false, true), 0x34);
-        assert_match!("STA2", Opcode::STA(false, false, true), 0x35);
-        assert_match!("DEI2", Opcode::DEI(false, false, true), 0x36);
-        assert_match!("DEO2", Opcode::DEO(false, false, true), 0x37);
-        assert_match!("ADD2", Opcode::ADD(false, false, true), 0x38);
-        assert_match!("SUB2", Opcode::SUB(false, false, true), 0x39);
-        assert_match!("MUL2", Opcode::MUL(false, false, true), 0x3a);
-        assert_match!("DIV2", Opcode::DIV(false, false, true), 0x3b);
-        assert_match!("AND2", Opcode::AND(false, false, true), 0x3c);
-        assert_match!("ORA2", Opcode::ORA(false, false, true), 0x3d);
-        assert_match!("EOR2", Opcode::EOR(false, false, true), 0x3e);
-        assert_match!("SFT2", Opcode::SFT(false, false, true), 0x3f);
+        assert_match!("INC2", Opcode::INC(true, false, false), 0x21);
+        assert_match!("POP2", Opcode::POP(true, false, false), 0x22);
+        assert_match!("NIP2", Opcode::NIP(true, false, false), 0x23);
+        assert_match!("SWP2", Opcode::SWP(true, false, false), 0x24);
+        assert_match!("ROT2", Opcode::ROT(true, false, false), 0x25);
+        assert_match!("DUP2", Opcode::DUP(true, false, false), 0x26);
+        assert_match!("OVR2", Opcode::OVR(true, false, false), 0x27);
+        assert_match!("EQU2", Opcode::EQU(true, false, false), 0x28);
+        assert_match!("NEQ2", Opcode::NEQ(true, false, false), 0x29);
+        assert_match!("GTH2", Opcode::GTH(true, false, false), 0x2a);
+        assert_match!("LTH2", Opcode::LTH(true, false, false), 0x2b);
+        assert_match!("JMP2", Opcode::JMP(true, false, false), 0x2c);
+        assert_match!("JCN2", Opcode::JCN(true, false, false), 0x2d);
+        assert_match!("JSR2", Opcode::JSR(true, false, false), 0x2e);
+        assert_match!("STH2", Opcode::STH(true, false, false), 0x2f);
+        assert_match!("LDZ2", Opcode::LDZ(true, false, false), 0x30);
+        assert_match!("STZ2", Opcode::STZ(true, false, false), 0x31);
+        assert_match!("LDR2", Opcode::LDR(true, false, false), 0x32);
+        assert_match!("STR2", Opcode::STR(true, false, false), 0x33);
+        assert_match!("LDA2", Opcode::LDA(true, false, false), 0x34);
+        assert_match!("STA2", Opcode::STA(true, false, false), 0x35);
+        assert_match!("DEI2", Opcode::DEI(true, false, false), 0x36);
+        assert_match!("DEO2", Opcode::DEO(true, false, false), 0x37);
+        assert_match!("ADD2", Opcode::ADD(true, false, false), 0x38);
+        assert_match!("SUB2", Opcode::SUB(true, false, false), 0x39);
+        assert_match!("MUL2", Opcode::MUL(true, false, false), 0x3a);
+        assert_match!("DIV2", Opcode::DIV(true, false, false), 0x3b);
+        assert_match!("AND2", Opcode::AND(true, false, false), 0x3c);
+        assert_match!("ORA2", Opcode::ORA(true, false, false), 0x3d);
+        assert_match!("EOR2", Opcode::EOR(true, false, false), 0x3e);
+        assert_match!("SFT2", Opcode::SFT(true, false, false), 0x3f);
         assert_match!("JMI", Opcode::JMI, 0x40);
         assert_match!("INCr", Opcode::INC(false, false, true), 0x41);
         assert_match!("POPr", Opcode::POP(false, false, true), 0x42);
@@ -347,7 +350,7 @@ mod tests {
         assert_match!("ORAk", Opcode::ORA(false, true, false), 0x9d);
         assert_match!("EORk", Opcode::EOR(false, true, false), 0x9e);
         assert_match!("SFTk", Opcode::SFT(false, true, false), 0x9f);
-        assert_match!("LIT2", Opcode::LIT(false, true), 0xa0);
+        assert_match!("LIT2", Opcode::LIT(true, false), 0xa0);
         assert_match!("INC2k", Opcode::INC(true, true, false), 0xa1);
         assert_match!("POP2k", Opcode::POP(true, true, false), 0xa2);
         assert_match!("NIP2k", Opcode::NIP(true, true, false), 0xa3);
