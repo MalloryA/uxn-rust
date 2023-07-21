@@ -1,6 +1,6 @@
 #[allow(clippy::upper_case_acronyms)]
 #[derive(PartialEq, Debug)]
-enum Opcode {
+pub enum Opcode {
     // Opcodes that don't take any arguments
     BRK,
     JCI,
@@ -76,7 +76,7 @@ macro_rules! with_2kr {
 }
 
 impl Opcode {
-    fn from_str(s: &str) -> Result<Opcode, &str> {
+    pub fn from_str(s: &str) -> Result<Opcode, &str> {
         let name = &s[..3];
         let modifiers = &s[3..];
         match name {
@@ -122,7 +122,7 @@ impl Opcode {
         }
     }
 
-    fn as_byte(&self) -> u8 {
+    pub fn as_byte(&self) -> u8 {
         match self {
             // Opcodes that don't take any arguments
             Opcode::BRK => 0x00,

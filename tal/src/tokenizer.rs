@@ -1,10 +1,29 @@
+use crate::opcodes::Opcode;
 use std::io::BufRead;
 use std::sync::mpsc::SyncSender;
 
+struct Token {
+    token_type: TokenType,
+    line_number: u32,
+    column_number: u32,
+    length: u32,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, line_number: u32, column_number: u32, length: u32) -> Token {
+        Token {
+            token_type,
+            line_number,
+            column_number,
+            length,
+        }
+    }
+}
+
 #[derive(PartialEq, Debug)]
-enum Token {
-    Opcode(String),
-    Eof,
+enum TokenType {
+    Opcode(Opcode),
+    End,
 }
 
 struct Tokenizer<'a> {
@@ -25,13 +44,20 @@ impl Tokenizer<'_> {
         }
 
         for token in line.split_whitespace() {
-            let result = self.tx.send(Token::Opcode(String::from(token)));
+            let result = Opcode::from_str(token);
+            if let Err(err) = result {
+                return Err(err.to_string());
+            }
+            let tt = TokenType::Opcode(result.unwrap());
+            let token = Token::new(tt, 0, 0, 0);
+            let result = self.tx.send(token);
             if let Err(err) = result {
                 return Err(err.to_string());
             }
         }
 
-        let result = self.tx.send(Token::Eof);
+        let token = Token::new(TokenType::End, 0, 0, 0);
+        let result = self.tx.send(token);
         if let Err(err) = result {
             return Err(err.to_string());
         }
@@ -57,14 +83,23 @@ mod tests {
 
         let a = rx.try_recv();
         assert!(a.is_ok());
-        assert_eq!(a.unwrap(), Token::Opcode(String::from("LIT")));
+        let token = a.unwrap();
+        assert_eq!(
+            token.token_type,
+            TokenType::Opcode(Opcode::LIT(false, false))
+        );
 
         let b = rx.try_recv();
         assert!(b.is_ok());
-        assert_eq!(b.unwrap(), Token::Opcode(String::from("DUP")));
+        let token = b.unwrap();
+        assert_eq!(
+            token.token_type,
+            TokenType::Opcode(Opcode::DUP(false, false, false))
+        );
 
         let c = rx.try_recv();
         assert!(c.is_ok());
-        assert_eq!(c.unwrap(), Token::Eof);
+        let token = c.unwrap();
+        assert_eq!(token.token_type, TokenType::End);
     }
 }
