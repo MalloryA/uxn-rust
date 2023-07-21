@@ -1,3 +1,4 @@
+#[derive(PartialEq, Debug)]
 enum Opcode {
     // Opcodes that don't take any arguments
     BRK,
@@ -40,9 +41,149 @@ enum Opcode {
     SFT(bool, bool, bool),
 }
 
+fn parse_modifiers(s: &str) -> Result<(bool, bool, bool), &str> {
+    if s.contains(|chr| chr != '2' && chr != 'k' && chr != 'r') {
+        Err("oh no")
+    } else {
+        let two = s.contains("2");
+        let keep = s.contains("k");
+        let return_stack = s.contains("r");
+
+        Ok((two, keep, return_stack))
+    }
+}
+
+fn modify(byte: u8, two: bool, keep: bool, return_stack: bool) -> u8 {
+    byte
+}
+
+macro_rules! with_2r {
+    ( $a:expr, $b:expr ) => {{
+        let (two, _, return_stack) = parse_modifiers($b)?;
+        Ok($a(two, return_stack))
+    }};
+}
+
+macro_rules! with_2kr {
+    ( $a:expr, $b:expr ) => {{
+        let (two, keep, return_stack) = parse_modifiers($b)?;
+        Ok($a(two, keep, return_stack))
+    }};
+}
+
+impl Opcode {
+    fn from_str(s: &str) -> Result<Opcode, &str> {
+        let name = &s[..3];
+        let modifiers = &s[3..];
+        match name {
+            "BRK" => Ok(Opcode::BRK),
+            "JCI" => Ok(Opcode::JCI),
+            "JMI" => Ok(Opcode::JMI),
+            "JSI" => Ok(Opcode::JSI),
+            // Opcodes that take 2 and r
+            "LIT" => with_2r!(Opcode::LIT, modifiers),
+            //    // Opcodes that take 2 and k and r
+            "INC" => with_2kr!(Opcode::INC, modifiers),
+            "POP" => with_2kr!(Opcode::POP, modifiers),
+            "NIP" => with_2kr!(Opcode::NIP, modifiers),
+            "SWP" => with_2kr!(Opcode::SWP, modifiers),
+            "ROT" => with_2kr!(Opcode::ROT, modifiers),
+            "DUP" => with_2kr!(Opcode::DUP, modifiers),
+            "OVR" => with_2kr!(Opcode::OVR, modifiers),
+            "EQU" => with_2kr!(Opcode::EQU, modifiers),
+            "NEQ" => with_2kr!(Opcode::NEQ, modifiers),
+            "GTH" => with_2kr!(Opcode::GTH, modifiers),
+            "LTH" => with_2kr!(Opcode::LTH, modifiers),
+            "JMP" => with_2kr!(Opcode::JMP, modifiers),
+            "JCN" => with_2kr!(Opcode::JCN, modifiers),
+            "JSR" => with_2kr!(Opcode::JSR, modifiers),
+            "STH" => with_2kr!(Opcode::STH, modifiers),
+            "LDZ" => with_2kr!(Opcode::LDZ, modifiers),
+            "STZ" => with_2kr!(Opcode::STZ, modifiers),
+            "LDR" => with_2kr!(Opcode::LDR, modifiers),
+            "STR" => with_2kr!(Opcode::STR, modifiers),
+            "LDA" => with_2kr!(Opcode::LDA, modifiers),
+            "STA" => with_2kr!(Opcode::STA, modifiers),
+            "DEI" => with_2kr!(Opcode::DEI, modifiers),
+            "DEO" => with_2kr!(Opcode::DEO, modifiers),
+            "ADD" => with_2kr!(Opcode::ADD, modifiers),
+            "SUB" => with_2kr!(Opcode::SUB, modifiers),
+            "MUL" => with_2kr!(Opcode::MUL, modifiers),
+            "DIV" => with_2kr!(Opcode::DIV, modifiers),
+            "AND" => with_2kr!(Opcode::AND, modifiers),
+            "ORA" => with_2kr!(Opcode::ORA, modifiers),
+            "EOR" => with_2kr!(Opcode::EOR, modifiers),
+            "SFT" => with_2kr!(Opcode::SFT, modifiers),
+            _ => Err("oh no"),
+        }
+    }
+
+    fn as_byte(&self) -> u8 {
+        match self {
+            // Opcodes that don't take any arguments
+            Opcode::BRK => 0x00,
+            Opcode::JCI => 0x20,
+            Opcode::JMI => 0x40,
+            Opcode::JSI => 0x60,
+            // Opcodes that take 2 and r
+            Opcode::LIT(two, return_stack) => modify(0x80, *two, false, *return_stack),
+            // Opcodes that take 2 and k and r
+            Opcode::INC(two, keep, return_stack) => modify(0x01, *two, *keep, *return_stack),
+            Opcode::POP(two, keep, return_stack) => modify(0x02, *two, *keep, *return_stack),
+            Opcode::NIP(two, keep, return_stack) => modify(0x03, *two, *keep, *return_stack),
+            Opcode::SWP(two, keep, return_stack) => modify(0x04, *two, *keep, *return_stack),
+            Opcode::ROT(two, keep, return_stack) => modify(0x05, *two, *keep, *return_stack),
+            Opcode::DUP(two, keep, return_stack) => modify(0x06, *two, *keep, *return_stack),
+            Opcode::OVR(two, keep, return_stack) => modify(0x07, *two, *keep, *return_stack),
+            Opcode::EQU(two, keep, return_stack) => modify(0x08, *two, *keep, *return_stack),
+            Opcode::NEQ(two, keep, return_stack) => modify(0x09, *two, *keep, *return_stack),
+            Opcode::GTH(two, keep, return_stack) => modify(0x0a, *two, *keep, *return_stack),
+            Opcode::LTH(two, keep, return_stack) => modify(0x0b, *two, *keep, *return_stack),
+            Opcode::JMP(two, keep, return_stack) => modify(0x0c, *two, *keep, *return_stack),
+            Opcode::JCN(two, keep, return_stack) => modify(0x0d, *two, *keep, *return_stack),
+            Opcode::JSR(two, keep, return_stack) => modify(0x0e, *two, *keep, *return_stack),
+            Opcode::STH(two, keep, return_stack) => modify(0x0f, *two, *keep, *return_stack),
+            Opcode::LDZ(two, keep, return_stack) => modify(0x10, *two, *keep, *return_stack),
+            Opcode::STZ(two, keep, return_stack) => modify(0x11, *two, *keep, *return_stack),
+            Opcode::LDR(two, keep, return_stack) => modify(0x12, *two, *keep, *return_stack),
+            Opcode::STR(two, keep, return_stack) => modify(0x13, *two, *keep, *return_stack),
+            Opcode::LDA(two, keep, return_stack) => modify(0x14, *two, *keep, *return_stack),
+            Opcode::STA(two, keep, return_stack) => modify(0x15, *two, *keep, *return_stack),
+            Opcode::DEI(two, keep, return_stack) => modify(0x16, *two, *keep, *return_stack),
+            Opcode::DEO(two, keep, return_stack) => modify(0x17, *two, *keep, *return_stack),
+            Opcode::ADD(two, keep, return_stack) => modify(0x18, *two, *keep, *return_stack),
+            Opcode::SUB(two, keep, return_stack) => modify(0x19, *two, *keep, *return_stack),
+            Opcode::MUL(two, keep, return_stack) => modify(0x1a, *two, *keep, *return_stack),
+            Opcode::DIV(two, keep, return_stack) => modify(0x1b, *two, *keep, *return_stack),
+            Opcode::AND(two, keep, return_stack) => modify(0x1c, *two, *keep, *return_stack),
+            Opcode::ORA(two, keep, return_stack) => modify(0x1d, *two, *keep, *return_stack),
+            Opcode::EOR(two, keep, return_stack) => modify(0x1e, *two, *keep, *return_stack),
+            Opcode::SFT(two, keep, return_stack) => modify(0x2f, *two, *keep, *return_stack),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    macro_rules! assert_match {
+        ( $a:expr, $b:expr, $c:expr ) => {{
+            let result = Opcode::from_str($a);
+            assert!(result.is_ok());
+            let opcode = result.unwrap();
+            assert_eq!(opcode, $b);
+
+            let byte = opcode.as_byte();
+            assert_eq!(byte, $c);
+        }};
+    }
+
+    #[test]
+    fn it_handles_errors() {
+        let result = Opcode::from_str("DOG");
+        assert!(result.is_err());
+    }
 
     #[test]
     fn it_works() {
@@ -174,7 +315,7 @@ mod tests {
         assert_match!("ORA2r", Opcode::ORA(true, false, true), 0x7d);
         assert_match!("EOR2r", Opcode::EOR(true, false, true), 0x7e);
         assert_match!("SFT2r", Opcode::SFT(true, false, true), 0x7f);
-        assert_match!("LIT", Opcode::LIT, 0x80);
+        assert_match!("LIT", Opcode::LIT(false, false), 0x80);
         assert_match!("INCk", Opcode::INC(false, true, false), 0x81);
         assert_match!("POPk", Opcode::POP(false, true, false), 0x82);
         assert_match!("NIPk", Opcode::NIP(false, true, false), 0x83);
@@ -206,7 +347,7 @@ mod tests {
         assert_match!("ORAk", Opcode::ORA(false, true, false), 0x9d);
         assert_match!("EORk", Opcode::EOR(false, true, false), 0x9e);
         assert_match!("SFTk", Opcode::SFT(false, true, false), 0x9f);
-        assert_match!("LIT2", Opcode::LIT(false, false, true), 0xa0);
+        assert_match!("LIT2", Opcode::LIT(false, true), 0xa0);
         assert_match!("INC2k", Opcode::INC(true, true, false), 0xa1);
         assert_match!("POP2k", Opcode::POP(true, true, false), 0xa2);
         assert_match!("NIP2k", Opcode::NIP(true, true, false), 0xa3);
@@ -238,7 +379,7 @@ mod tests {
         assert_match!("ORA2k", Opcode::ORA(true, true, false), 0xbd);
         assert_match!("EOR2k", Opcode::EOR(true, true, false), 0xbe);
         assert_match!("SFT2k", Opcode::SFT(true, true, false), 0xbf);
-        assert_match!("LITr", Opcode::LIT(false, false, true), 0xc0);
+        assert_match!("LITr", Opcode::LIT(false, true), 0xc0);
         assert_match!("INCkr", Opcode::INC(false, true, true), 0xc1);
         assert_match!("POPkr", Opcode::POP(false, true, true), 0xc2);
         assert_match!("NIPkr", Opcode::NIP(false, true, true), 0xc3);
@@ -270,7 +411,7 @@ mod tests {
         assert_match!("ORAkr", Opcode::ORA(false, true, true), 0xdd);
         assert_match!("EORkr", Opcode::EOR(false, true, true), 0xde);
         assert_match!("SFTkr", Opcode::SFT(false, true, true), 0xdf);
-        assert_match!("LIT2r", Opcode::LIT(true, false, true), 0xe0);
+        assert_match!("LIT2r", Opcode::LIT(true, true), 0xe0);
         assert_match!("INC2kr", Opcode::INC(true, true, true), 0xe1);
         assert_match!("POP2kr", Opcode::POP(true, true, true), 0xe2);
         assert_match!("NIP2kr", Opcode::NIP(true, true, true), 0xe3);
