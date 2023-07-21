@@ -5,7 +5,7 @@ use std::sync::mpsc::SyncSender;
 #[derive(PartialEq, Debug)]
 enum Token {
     Opcode(String),
-    EOF,
+    Eof,
 }
 
 struct Tokenizer<'a> {
@@ -21,20 +21,20 @@ impl Tokenizer<'_> {
     pub fn go(&mut self) -> Result<(), String> {
         let mut line = String::new();
         let result = self.reader.read_line(&mut line);
-        if result.is_err() {
-            return Err(result.unwrap_err().to_string());
+        if let Err(err) = result {
+            return Err(err.to_string());
         }
 
         for token in line.split_whitespace() {
             let result = self.tx.send(Token::Opcode(String::from(token)));
-            if result.is_err() {
-                return Err(result.unwrap_err().to_string());
+            if let Err(err) = result {
+                return Err(err.to_string());
             }
         }
 
-        let result = self.tx.send(Token::EOF);
-        if result.is_err() {
-            return Err(result.unwrap_err().to_string());
+        let result = self.tx.send(Token::Eof);
+        if let Err(err) = result {
+            return Err(err.to_string());
         }
 
         Ok(())
@@ -66,6 +66,6 @@ mod tests {
 
         let c = rx.try_recv();
         assert!(c.is_ok());
-        assert_eq!(c.unwrap(), Token::EOF);
+        assert_eq!(c.unwrap(), Token::Eof);
     }
 }
