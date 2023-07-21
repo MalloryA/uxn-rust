@@ -1,5 +1,4 @@
 use std::io::BufRead;
-use std::io::Read;
 use std::sync::mpsc::SyncSender;
 
 #[derive(PartialEq, Debug)]
