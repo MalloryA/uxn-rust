@@ -1,3 +1,4 @@
+#[allow(clippy::upper_case_acronyms)]
 #[derive(PartialEq, Debug)]
 enum Opcode {
     // Opcodes that don't take any arguments
@@ -45,9 +46,9 @@ fn parse_modifiers(s: &str) -> Result<(bool, bool, bool), &str> {
     if s.contains(|chr| chr != '2' && chr != 'k' && chr != 'r') {
         Err("oh no")
     } else {
-        let two = s.contains("2");
-        let keep = s.contains("k");
-        let return_stack = s.contains("r");
+        let two = s.contains('2');
+        let keep = s.contains('k');
+        let return_stack = s.contains('r');
 
         Ok((two, keep, return_stack))
     }
