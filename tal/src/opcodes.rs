@@ -77,6 +77,9 @@ macro_rules! with_2kr {
 
 impl Opcode {
     pub fn from_str(s: &str) -> Result<Opcode, &str> {
+        if s.len() < 3 {
+            return Err("opcode too short! ({name:?})");
+        }
         let name = &s[..3];
         let modifiers = &s[3..];
         match name {
