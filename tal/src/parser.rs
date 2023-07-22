@@ -6,6 +6,16 @@ use crate::token::Token;
 // 1_0000 - 0100 = ff00
 type Rom = [u8; 0xff00];
 
+trait New {
+    fn new() -> Rom;
+}
+
+impl New for Rom {
+    fn new() -> Rom {
+        [0; 0xff00]
+    }
+}
+
 fn parse(tokens: &mut dyn Iterator<Item = Token>) -> Result<Rom, &str> {
     Err("foo")
 }
@@ -16,7 +26,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut expected: Rom = [0; 0xff00];
+        let mut expected = Rom::new();
         expected[0] = 0x80;
         expected[1] = 0x68;
         expected[2] = 0x80;
