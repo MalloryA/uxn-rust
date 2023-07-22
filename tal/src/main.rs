@@ -1,3 +1,4 @@
+mod breaker;
 mod opcodes;
 mod tokenizer;
 
