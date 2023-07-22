@@ -35,6 +35,13 @@ impl Chunker<'_> {
     }
 }
 
+fn is_whitespace(byte: u8) -> bool {
+    match byte {
+        b' ' | b'\n' | b'\t' => true,
+        _ => false,
+    }
+}
+
 impl Iterator for Chunker<'_> {
     type Item = Chunk;
 
@@ -51,25 +58,28 @@ impl Iterator for Chunker<'_> {
                 None => {
                     return None;
                 }
-                Some(Ok(b'\n' | b'\t' | b' ')) => match String::from_utf8(s) {
-                    Ok(string) => {
-                        self.column += 1;
-                        let value = Some(Chunk::new(string, self.line, column));
-                        if byte == b'\n' {
-                            self.line += 1;
-                            self.column = 0;
+                Some(Ok(byte)) => {
+                    if is_whitespace(byte) {
+                        match String::from_utf8(s) {
+                            Ok(string) => {
+                                self.column += 1;
+                                let value = Some(Chunk::new(string, self.line, column));
+                                if byte == b'\n' {
+                                    self.line += 1;
+                                    self.column = 0;
+                                }
+                                return value;
+                            }
+                            Err(_) => {
+                                panic!("b");
+                                return None;
+                            }
                         }
-                        return value;
-                    }
-                    Err(_) => {
-                        panic!("b");
-                        return None;
-                    }
-                    _ => {
+                    } else {
                         s.push(byte);
                         self.column += 1;
                     }
-                },
+                }
             }
         }
     }
