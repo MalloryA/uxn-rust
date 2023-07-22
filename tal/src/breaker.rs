@@ -22,6 +22,7 @@ impl Chunk {
 struct Breaker<'a> {
     bytes: Bytes<&'a mut dyn BufRead>,
     line: usize,
+    column: usize,
 }
 
 impl Breaker<'_> {
@@ -29,6 +30,7 @@ impl Breaker<'_> {
         Breaker {
             bytes: reader.bytes(),
             line: 0,
+            column: 0,
         }
     }
 }
@@ -40,31 +42,32 @@ impl Iterator for Breaker<'_> {
         let mut s: Vec<u8> = vec![];
 
         loop {
+            let column = self.column - s.len();
             match self.bytes.next() {
-                None => {
-                    //panic!("z");
-                    return None;
-                }
                 Some(Err(_)) => {
-                    //panic!("a");
+                    panic!("a");
                     return None;
                 }
-                Some(Ok(byte)) => match byte {
-                    b'\n' | b'\t' => match String::from_utf8(s) {
-                        Ok(string) => {
-                            let value = Some(Chunk::new(string, self.line, 0));
-                            if byte == b'\n' {
-                                self.line += 1;
-                            }
-                            return value;
+                None => {
+                    return None;
+                }
+                Some(Ok(b'\n' | b'\t' | b' ')) => match String::from_utf8(s) {
+                    Ok(string) => {
+                        self.column += 1;
+                        let value = Some(Chunk::new(string, self.line, column));
+                        if byte == b'\n' {
+                            self.line += 1;
+                            self.column = 0;
                         }
-                        Err(_) => {
-                            //panic!("b");
-                            return None;
-                        }
-                    },
+                        return value;
+                    }
+                    Err(_) => {
+                        panic!("b");
+                        return None;
+                    }
                     _ => {
                         s.push(byte);
+                        self.column += 1;
                     }
                 },
             }
