@@ -52,10 +52,19 @@ impl Iterator for Chunker<'_> {
             let column = self.column - s.len();
             match self.bytes.next() {
                 Some(Err(_)) => {
-                    panic!("a");
                     return None;
                 }
                 None => {
+                    if s.len() > 0 {
+                        match String::from_utf8(s) {
+                            Ok(string) => {
+                                return Some(Chunk::new(string, self.line, column));
+                            }
+                            Err(_) => {
+                                return None;
+                            }
+                        }
+                    }
                     return None;
                 }
                 Some(Ok(byte)) => {
@@ -71,7 +80,6 @@ impl Iterator for Chunker<'_> {
                                 return value;
                             }
                             Err(_) => {
-                                panic!("b");
                                 return None;
                             }
                         }
