@@ -2,19 +2,19 @@ use crate::chunker::Chunk;
 use crate::opcode::Opcode;
 
 #[derive(Debug, PartialEq)]
-enum TokenType {
+pub enum TokenType {
     MacroInvocation(String),
     Opcode(Opcode),
 }
 
 #[derive(Debug, PartialEq)]
-struct Token {
-    token_type: TokenType,
-    chunk: Chunk,
+pub struct Token {
+    pub token_type: TokenType,
+    pub chunk: Chunk,
 }
 
 impl Token {
-    fn from_chunk(chunk: Chunk) -> Result<Token, String> {
+    pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
         let result = Opcode::from_str(&chunk.value);
         match result {
             Ok(opcode) => Ok(Token {
