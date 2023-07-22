@@ -1,10 +1,13 @@
 use crate::chunker::Chunk;
 use crate::opcode::Opcode;
+use hex;
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
     MacroInvocation(String),
     Opcode(Opcode),
+    RawByte(u8),
+    PositionReset(u16),
 }
 
 #[derive(Debug, PartialEq)]
@@ -13,19 +16,62 @@ pub struct Token {
     pub chunk: Chunk,
 }
 
+fn parse_byte(s: &str) -> Result<u8, String> {
+    if s.len() != 2 {
+        Err("not 2 bytes long".to_string())
+    } else {
+        match hex::decode(s) {
+            Ok(bytes) => Ok(bytes[0]),
+            Err(_) => Err("Could not parse hex".to_string()),
+        }
+    }
+}
+
+fn parse_short(s: &str) -> Result<u16, String> {
+    if s.len() != 4 {
+        Err("not 4 bytes long".to_string())
+    } else {
+        match hex::decode(s) {
+            Ok(bytes) => {
+                let short: u16 = (bytes[0] as u16) << 8 | bytes[1] as u16;
+                Ok(short)
+            }
+            Err(_) => Err("Could not parse hex".to_string()),
+        }
+    }
+}
+
 impl Token {
     pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
-        let result = Opcode::from_str(&chunk.value);
-        match result {
-            Ok(opcode) => Ok(Token {
+        if let Ok(opcode) = Opcode::from_str(&chunk.value) {
+            return Ok(Token {
                 token_type: TokenType::Opcode(opcode),
                 chunk,
-            }),
-            Err(_) => Ok(Token {
-                token_type: TokenType::MacroInvocation(chunk.value.clone()),
-                chunk,
-            }),
+            });
         }
+
+        if &chunk.value.as_str()[0..1] == "|" {
+            if let Ok(short) = parse_short(&chunk.value[1..]) {
+                return Ok(Token {
+                    token_type: TokenType::PositionReset(short),
+                    chunk,
+                });
+            } else {
+                return Err("could not parse PositionReset".to_string());
+            }
+        }
+
+        if let Ok(byte) = parse_byte(&chunk.value) {
+            return Ok(Token {
+                token_type: TokenType::RawByte(byte),
+                chunk,
+            });
+        }
+
+        return Ok(Token {
+            token_type: TokenType::MacroInvocation(chunk.value.clone()),
+            chunk,
+        });
     }
 }
 
@@ -48,5 +94,7 @@ mod tests {
         assert_match!("cat", TokenType::MacroInvocation(String::from("cat")));
         assert_match!("DUP", TokenType::Opcode(Opcode::DUP(false, false, false)));
         assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
+        assert_match!("12", TokenType::RawByte(0x12));
+        assert_match!("|acab", TokenType::PositionReset(0xacab));
     }
 }
