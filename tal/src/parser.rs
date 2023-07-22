@@ -17,7 +17,7 @@ impl New for Rom {
     }
 }
 
-fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
+pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
     let mut position = 0;
 
     let mut rom = Rom::new();
