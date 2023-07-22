@@ -3,14 +3,14 @@ use std::io::Bytes;
 use std::io::Read;
 
 #[derive(Debug, PartialEq)]
-struct Chunk {
-    value: String,
-    line: usize,
-    column: usize,
+pub struct Chunk {
+    pub value: String,
+    pub line: usize,
+    pub column: usize,
 }
 
 impl Chunk {
-    fn new(value: String, line: usize, column: usize) -> Chunk {
+    pub fn new(value: String, line: usize, column: usize) -> Chunk {
         Chunk {
             value,
             line,
@@ -19,7 +19,7 @@ impl Chunk {
     }
 }
 
-struct Chunker<'a> {
+pub struct Chunker<'a> {
     bytes: Bytes<&'a mut dyn BufRead>,
     line: usize,
     column: usize,

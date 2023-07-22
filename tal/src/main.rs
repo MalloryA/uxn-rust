@@ -1,6 +1,6 @@
 mod chunker;
 mod opcodes;
-mod tokenizer;
+mod token;
 
 fn main() {
     println!("Hello, world!");
