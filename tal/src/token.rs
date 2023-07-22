@@ -1,9 +1,10 @@
 use crate::chunker::Chunk;
+use crate::opcode::Opcode;
 
 #[derive(Debug, PartialEq)]
 enum TokenType {
-    EndOfFile,
     MacroInvocation(String),
+    Opcode(Opcode),
 }
 
 #[derive(Debug, PartialEq)]
@@ -14,10 +15,17 @@ struct Token {
 
 impl Token {
     fn from_chunk(chunk: Chunk) -> Result<Token, String> {
-        Ok(Token {
-            token_type: TokenType::MacroInvocation(chunk.value.clone()),
-            chunk,
-        })
+        let result = Opcode::from_str(&chunk.value);
+        match result {
+            Ok(opcode) => Ok(Token {
+                token_type: TokenType::Opcode(opcode),
+                chunk,
+            }),
+            Err(_) => Ok(Token {
+                token_type: TokenType::MacroInvocation(chunk.value.clone()),
+                chunk,
+            }),
+        }
     }
 }
 
@@ -38,5 +46,7 @@ mod tests {
     #[test]
     fn it_works() {
         assert_match!("cat", TokenType::MacroInvocation(String::from("cat")));
+        assert_match!("DUP", TokenType::Opcode(Opcode::DUP(false, false, false)));
+        assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
     }
 }

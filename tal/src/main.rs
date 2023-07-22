@@ -1,5 +1,5 @@
 mod chunker;
-mod opcodes;
+mod opcode;
 mod token;
 
 fn main() {
