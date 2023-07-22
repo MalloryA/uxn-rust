@@ -1,0 +1,7 @@
+( hello.tal )
+|0100 LIT "h #18 DEO
+      LIT "e #18 DEO
+      LIT "l #18 DEO
+      LIT "l #18 DEO
+      LIT "o #18 DEO
+      #0a #18 DEO ( newline )
