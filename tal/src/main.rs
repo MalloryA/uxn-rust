@@ -39,16 +39,18 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::BufWriter;
     use std::io::Cursor;
 
     #[test]
     fn it_works() {
-        //        let mut input = Cursor::new("|0100 LIT 68 LIT 18 DEO");
-        //        let mut output: Cursor<[u8]> = Cursor<&mut [u8]>::new();
-        //        let mut expected = "x80x68x80x18x17";
-        //
-        //        let result = read_and_write(&mut output, &mut input);
-        //        assert!(result.is_ok());
-        //        assert_eq!(output, expected);
+        let mut input = Cursor::new(b"|0100 LIT 68 LIT 18 DEO");
+        let mut output = Cursor::<Vec<u8>>::new(vec![]);
+        let mut expected: Vec<u8> = vec![0x80, 0x68, 0x80, 0x18, 0x17];
+
+        let result = read_and_write(&mut output, &mut input);
+        assert!(result.is_ok());
+        let actual = output.into_inner();
+        assert_eq!(actual, expected);
     }
 }
