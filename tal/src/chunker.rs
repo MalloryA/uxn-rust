@@ -26,7 +26,7 @@ pub struct Chunker<'a> {
 }
 
 impl Chunker<'_> {
-    pub fn new<'a>(reader: &'a mut dyn BufRead) -> Chunker {
+    pub fn new(reader: &mut dyn BufRead) -> Chunker {
         Chunker {
             bytes: reader.bytes(),
             line: 0,
@@ -36,10 +36,7 @@ impl Chunker<'_> {
 }
 
 fn is_whitespace(byte: u8) -> bool {
-    match byte {
-        b' ' | b'\n' | b'\t' => true,
-        _ => false,
-    }
+    matches!(byte, b' ' | b'\n' | b'\t')
 }
 
 impl Iterator for Chunker<'_> {
@@ -55,7 +52,7 @@ impl Iterator for Chunker<'_> {
                     return None;
                 }
                 None => {
-                    if s.len() > 0 {
+                    if !s.is_empty() {
                         match String::from_utf8(s) {
                             Ok(string) => {
                                 return Some(Chunk::new(string, self.line, column));

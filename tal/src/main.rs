@@ -46,7 +46,7 @@ mod tests {
     fn it_works() {
         let mut input = Cursor::new(b"|0100 LIT 68 LIT 18 DEO");
         let mut output = Cursor::<Vec<u8>>::new(vec![]);
-        let mut expected: Vec<u8> = vec![0x80, 0x68, 0x80, 0x18, 0x17];
+        let expected: Vec<u8> = vec![0x80, 0x68, 0x80, 0x18, 0x17];
 
         let result = read_and_write(&mut output, &mut input);
         assert!(result.is_ok());

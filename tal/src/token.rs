@@ -1,6 +1,5 @@
 use crate::chunker::Chunk;
 use crate::opcode::Opcode;
-use hex;
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
@@ -68,10 +67,10 @@ impl Token {
             });
         }
 
-        return Ok(Token {
+        Ok(Token {
             token_type: TokenType::MacroInvocation(chunk.value.clone()),
             chunk,
-        });
+        })
     }
 }
 

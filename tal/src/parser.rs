@@ -8,23 +8,21 @@ use crate::token::TokenType;
 type Rom = [u8; 0xff00];
 
 pub trait Romable {
-    fn new() -> Rom;
+    fn new() -> Self;
     fn get_bytes(&self) -> &[u8];
 }
 
 impl Romable for Rom {
-    fn new() -> Rom {
+    fn new() -> Self {
         [0; 0xff00]
     }
 
     fn get_bytes(&self) -> &[u8] {
         let mut last_non_null: Option<usize> = None;
-        let mut i = 0;
-        for byte in self {
+        for (i, byte) in self.iter().enumerate() {
             if *byte != 0x00 {
                 last_non_null = Some(i);
             }
-            i += 1;
         }
         match last_non_null {
             None => &[],
@@ -92,6 +90,7 @@ mod tests {
         assert_eq!(rom, expected);
     }
 
+    #[test]
     fn rom() {
         let mut rom = Rom::new();
         rom[0] = 0x80;
