@@ -5,6 +5,7 @@ mod token;
 
 use crate::chunker::Chunker;
 use crate::parser::parse;
+use crate::parser::Romable;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::BufRead;
@@ -14,7 +15,7 @@ use std::io::Write;
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), String> {
     let mut chunker = Chunker::new(reader);
     match parse(&mut chunker) {
-        Ok(rom) => match writer.write_all(&rom) {
+        Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         },
@@ -39,7 +40,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufWriter;
     use std::io::Cursor;
 
     #[test]
@@ -50,6 +50,7 @@ mod tests {
 
         let result = read_and_write(&mut output, &mut input);
         assert!(result.is_ok());
+        println!("{output:?}");
         let actual = output.into_inner();
         assert_eq!(actual, expected);
     }
