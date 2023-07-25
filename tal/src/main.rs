@@ -6,11 +6,13 @@ mod token;
 use crate::chunker::Chunker;
 use crate::parser::parse;
 use crate::parser::Romable;
+use std::env::args;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
+use std::process::exit;
 
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), String> {
     let mut chunker = Chunker::new(reader);
@@ -24,11 +26,21 @@ fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<()
 }
 
 fn main() {
-    let mut input = BufReader::new(File::open("hello.tal").unwrap());
+    let mut args = args();
+    let program = args.nth(0).unwrap();
+
+    if args.len() != 2 {
+        println!("Usage: {} input.tal output.rom", program);
+        exit(1);
+    }
+    let input_path = args.nth(0).unwrap();
+    let output_path = args.nth(0).unwrap();
+
+    let mut input = BufReader::new(File::open(input_path).unwrap());
     let mut output = OpenOptions::new()
         .write(true)
         .create(true)
-        .open("hello.rom")
+        .open(output_path)
         .unwrap();
     let result = read_and_write(&mut output, &mut input);
     match result {
