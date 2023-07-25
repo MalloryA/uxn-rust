@@ -27,14 +27,14 @@ fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<()
 
 fn main() {
     let mut args = args();
-    let program = args.nth(0).unwrap();
+    let program = args.next().unwrap();
 
     if args.len() != 2 {
         println!("Usage: {} input.tal output.rom", program);
         exit(1);
     }
-    let input_path = args.nth(0).unwrap();
-    let output_path = args.nth(0).unwrap();
+    let input_path = args.next().unwrap();
+    let output_path = args.next().unwrap();
 
     let mut input = BufReader::new(File::open(input_path).unwrap());
     let mut output = OpenOptions::new()
