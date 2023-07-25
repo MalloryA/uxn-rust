@@ -54,5 +54,4 @@ fn it_works() {
         let rom = path.with_extension("rom");
         test_file(path, rom);
     }
-    assert!(false);
 }

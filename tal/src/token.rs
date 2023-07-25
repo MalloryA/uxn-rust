@@ -7,6 +7,8 @@ pub enum TokenType {
     Opcode(Opcode),
     RawByte(u8),
     PositionReset(u16),
+    CommentStart,
+    CommentEnd,
 }
 
 #[derive(Debug, PartialEq)]
@@ -42,6 +44,19 @@ fn parse_short(s: &str) -> Result<u16, String> {
 
 impl Token {
     pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
+        if chunk.value == "(" {
+            return Ok(Token {
+                token_type: TokenType::CommentStart,
+                chunk,
+            });
+        }
+        if chunk.value == ")" {
+            return Ok(Token {
+                token_type: TokenType::CommentEnd,
+                chunk,
+            });
+        }
+
         if let Ok(opcode) = Opcode::from_str(&chunk.value) {
             return Ok(Token {
                 token_type: TokenType::Opcode(opcode),

@@ -32,32 +32,51 @@ impl Romable for Rom {
 }
 
 pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
+    let mut comment = false;
     let mut position = 0;
 
     let mut rom = Rom::new();
 
     loop {
-        match chunks.next() {
-            None => {
-                return Ok(rom);
-            }
-            Some(chunk) => match Token::from_chunk(chunk) {
-                Err(err) => return Err(err),
-                Ok(token) => match token.token_type {
-                    TokenType::Opcode(opcode) => {
-                        rom[position] = opcode.as_byte();
-                        position += 1;
-                    }
-                    TokenType::RawByte(byte) => {
-                        rom[position] = byte;
-                        position += 1;
-                    }
-                    TokenType::PositionReset(offset) => {
-                        position = offset as usize - 0x100;
-                    }
-                    _ => todo!(),
+        let next = chunks.next();
+
+        if comment {
+            match next {
+                None => return Err("reached EOF without seeing a CommentEnd token".to_string()),
+                Some(chunk) => match Token::from_chunk(chunk) {
+                    Err(err) => return Err(err),
+                    Ok(token) => match token.token_type {
+                        TokenType::CommentEnd => comment = false,
+                        _ => continue,
+                    },
                 },
-            },
+            }
+        } else {
+            match next {
+                None => {
+                    return Ok(rom);
+                }
+                Some(chunk) => match Token::from_chunk(chunk) {
+                    Err(err) => return Err(err),
+                    Ok(token) => match token.token_type {
+                        TokenType::Opcode(opcode) => {
+                            rom[position] = opcode.as_byte();
+                            position += 1;
+                        }
+                        TokenType::RawByte(byte) => {
+                            rom[position] = byte;
+                            position += 1;
+                        }
+                        TokenType::PositionReset(offset) => {
+                            position = offset as usize - 0x100;
+                        }
+                        TokenType::CommentStart => {
+                            comment = true;
+                        }
+                        _ => todo!("{:?}", token),
+                    },
+                },
+            }
         }
     }
 }
