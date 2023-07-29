@@ -42,9 +42,9 @@ pub enum Opcode {
     SFT(bool, bool, bool),
 }
 
-fn parse_modifiers(s: &str) -> Result<(bool, bool, bool), &str> {
+fn parse_modifiers(s: &str) -> Result<(bool, bool, bool), String> {
     if s.contains(|chr| chr != '2' && chr != 'k' && chr != 'r') {
-        Err("oh no")
+        Err(format!("valid opcode provided invalid modifiers \"{}\"", s))
     } else {
         let two = s.contains('2');
         let keep = s.contains('k');
@@ -76,9 +76,9 @@ macro_rules! with_2kr {
 }
 
 impl Opcode {
-    pub fn from_str(s: &str) -> Result<Opcode, &str> {
+    pub fn from_str(s: &str) -> Result<Opcode, String> {
         if s.len() < 3 {
-            return Err("opcode too short! ({name:?})");
+            return Err(format!("unknown opcode \"{}\"", s));
         }
         let name = &s[..3];
         let modifiers = &s[3..];
@@ -121,7 +121,7 @@ impl Opcode {
             "ORA" => with_2kr!(Opcode::ORA, modifiers),
             "EOR" => with_2kr!(Opcode::EOR, modifiers),
             "SFT" => with_2kr!(Opcode::SFT, modifiers),
-            _ => Err("oh no"),
+            _ => Err(format!("unknown opcode \"{}\"", name)),
         }
     }
 
@@ -190,6 +190,18 @@ mod tests {
     fn it_handles_errors() {
         let result = Opcode::from_str("DOG");
         assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "unknown opcode \"DOG\"");
+
+        let result = Opcode::from_str("IN");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "unknown opcode \"IN\"");
+
+        let result = Opcode::from_str("INCra");
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "valid opcode provided invalid modifiers \"ra\""
+        );
     }
 
     #[test]

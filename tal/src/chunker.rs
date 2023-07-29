@@ -2,7 +2,7 @@ use std::io::BufRead;
 use std::io::Bytes;
 use std::io::Read;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Chunk {
     pub value: String,
     pub line: usize,

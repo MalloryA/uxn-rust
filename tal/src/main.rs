@@ -5,6 +5,7 @@ mod parser;
 mod token;
 
 use crate::chunker::Chunker;
+use crate::error::Error;
 use crate::parser::parse;
 use crate::parser::Romable;
 use std::env::args;
@@ -15,12 +16,12 @@ use std::io::BufReader;
 use std::io::Write;
 use std::process::exit;
 
-fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), String> {
+fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), Error> {
     let mut chunker = Chunker::new(reader);
     match parse(&mut chunker) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
+            Err(err) => panic!("{:?}", err),
         },
         Err(err) => Err(err),
     }
@@ -37,7 +38,7 @@ fn main() {
     let input_path = args.next().unwrap();
     let output_path = args.next().unwrap();
 
-    let mut input = BufReader::new(File::open(input_path).unwrap());
+    let mut input = BufReader::new(File::open(input_path.clone()).unwrap());
     let mut output = OpenOptions::new()
         .write(true)
         .truncate(true)
@@ -48,7 +49,8 @@ fn main() {
     match result {
         Ok(_) => println!("OK"),
         Err(err) => {
-            println!("Error!!! {err:?}");
+            let mut input = BufReader::new(File::open(input_path).unwrap());
+            println!("{}", err.to_string_with_context(&mut input));
             exit(1);
         }
     }

@@ -1,4 +1,5 @@
 use crate::chunker::Chunk;
+use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::token::Token;
 use crate::token::TokenType;
@@ -32,8 +33,8 @@ impl Romable for Rom {
     }
 }
 
-pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
-    let mut comment = false;
+pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
+    let mut comment_start: Option<Chunk> = None;
     let mut position = 0;
 
     let mut rom = Rom::new();
@@ -41,13 +42,18 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
     loop {
         let next = chunks.next();
 
-        if comment {
+        if comment_start.is_some() {
             match next {
-                None => return Err("reached EOF without seeing a CommentEnd token".to_string()),
-                Some(chunk) => match Token::from_chunk(chunk) {
-                    Err(err) => return Err(err),
+                None => {
+                    return Err(Error::new(
+                        "reached EOF without seeing a CommentEnd token".to_string(),
+                        comment_start.unwrap(),
+                    ))
+                }
+                Some(chunk) => match Token::from_chunk(chunk.clone()) {
+                    Err(err) => return Err(Error::new(err, chunk)),
                     Ok(token) => match token.token_type {
-                        TokenType::CommentEnd => comment = false,
+                        TokenType::CommentEnd => comment_start = None,
                         _ => continue,
                     },
                 },
@@ -57,8 +63,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
                 None => {
                     return Ok(rom);
                 }
-                Some(chunk) => match Token::from_chunk(chunk) {
-                    Err(err) => return Err(err),
+                Some(chunk) => match Token::from_chunk(chunk.clone()) {
+                    Err(err) => return Err(Error::new(err, chunk)),
                     Ok(token) => match token.token_type {
                         TokenType::Opcode(opcode) => {
                             rom[position] = opcode.as_byte();
@@ -72,7 +78,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
                             position = offset as usize - 0x100;
                         }
                         TokenType::CommentStart => {
-                            comment = true;
+                            comment_start = Some(chunk);
                         }
                         TokenType::Ascii(value) => {
                             for byte in value.bytes() {

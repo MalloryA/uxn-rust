@@ -1,17 +1,18 @@
 use crate::chunker::Chunk;
 use std::io::BufRead;
 
-struct Error {
+#[derive(Debug)]
+pub struct Error {
     message: String,
     chunk: Chunk,
 }
 
 impl Error {
-    fn new(message: String, chunk: Chunk) -> Error {
+    pub fn new(message: String, chunk: Chunk) -> Error {
         Error { message, chunk }
     }
 
-    fn to_string_with_context(self, reader: &mut dyn BufRead) -> String {
+    pub fn to_string_with_context(self, reader: &mut dyn BufRead) -> String {
         let line = reader.lines().nth(self.chunk.line);
         let line = line.unwrap();
         let line = line.unwrap();
