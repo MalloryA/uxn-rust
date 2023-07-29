@@ -7,7 +7,6 @@ mod token;
 use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::parser::parse;
-use crate::parser::Romable;
 use std::env::args;
 use std::fs::File;
 use std::fs::OpenOptions;

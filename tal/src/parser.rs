@@ -3,39 +3,51 @@ use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::token::Token;
 use crate::token::TokenType;
+use std::fmt::Debug;
+use std::fmt::Formatter;
 
-// uxn memory is 1_0000
-// and the first 0100 is reserved for devices
-// 1_0000 - 0100 = ff00
-type Rom = [u8; 0xff00];
-
-pub trait Romable {
-    fn new() -> Self;
-    fn get_bytes(&self) -> &[u8];
+#[derive(PartialEq)]
+pub struct Rom {
+    rom: [u8; 0x10000],
 }
 
-impl Romable for Rom {
-    fn new() -> Self {
-        [0; 0xff00]
+impl Debug for Rom {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_fmt(format_args!("{}", hex::encode(self.get_bytes())))?;
+        Ok(())
+    }
+}
+
+impl Rom {
+    pub fn new() -> Self {
+        Rom { rom: [0; 0x10000] }
     }
 
-    fn get_bytes(&self) -> &[u8] {
+    pub fn write_byte(&mut self, position: u16, byte: u8) {
+        if position < 0x100 {
+            panic!("Cannot write at i < 0x100 where i={:x}", position);
+        }
+        self.rom[position as usize] = byte;
+    }
+
+    pub fn get_bytes(&self) -> &[u8] {
         let mut last_non_null: Option<usize> = None;
-        for (i, byte) in self.iter().enumerate() {
+        let iter = self.rom.iter().skip(0x100);
+        for (i, byte) in iter.enumerate() {
             if *byte != 0x00 {
                 last_non_null = Some(i);
             }
         }
         match last_non_null {
             None => &[],
-            Some(size) => &self[0..size + 1],
+            Some(size) => &self.rom[0x100..size + 0x101],
         }
     }
 }
 
 pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
     let mut comment_start: Option<Chunk> = None;
-    let mut position = 0;
+    let mut position: u16 = 0;
 
     let mut rom = Rom::new();
 
@@ -67,39 +79,39 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                     Err(err) => return Err(Error::new(err, chunk)),
                     Ok(token) => match token.token_type {
                         TokenType::Opcode(opcode) => {
-                            rom[position] = opcode.as_byte();
+                            rom.write_byte(position, opcode.as_byte());
                             position += 1;
                         }
                         TokenType::RawByte(byte) => {
-                            rom[position] = byte;
+                            rom.write_byte(position, byte);
                             position += 1;
                         }
                         TokenType::AbsolutePadding(offset) => {
-                            position = offset as usize - 0x100;
+                            position = offset;
                         }
                         TokenType::CommentStart => {
                             comment_start = Some(chunk);
                         }
                         TokenType::Ascii(value) => {
                             for byte in value.bytes() {
-                                rom[position] = byte;
+                                rom.write_byte(position, byte);
                                 position += 1;
                             }
                         }
                         TokenType::LitByte(byte) => {
-                            rom[position] = Opcode::LIT(false, false).as_byte();
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
-                            rom[position] = byte;
+                            rom.write_byte(position, byte);
                             position += 1;
                         }
                         TokenType::LitShort(short) => {
-                            rom[position] = Opcode::LIT(false, false).as_byte();
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             let high: u8 = (short >> 8).try_into().unwrap();
                             let low: u8 = (short & 0xff).try_into().unwrap();
                             position += 1;
-                            rom[position] = high;
+                            rom.write_byte(position, high);
                             position += 1;
-                            rom[position] = low;
+                            rom.write_byte(position, low);
                             position += 1;
                         }
                         _ => todo!("{:?}", token),
@@ -117,11 +129,11 @@ mod tests {
     #[test]
     fn it_works() {
         let mut expected = Rom::new();
-        expected[0] = 0x80;
-        expected[1] = 0x68;
-        expected[2] = 0x80;
-        expected[3] = 0x18;
-        expected[4] = 0x17;
+        expected.write_byte(0x100, 0x80);
+        expected.write_byte(0x101, 0x68);
+        expected.write_byte(0x102, 0x80);
+        expected.write_byte(0x103, 0x18);
+        expected.write_byte(0x104, 0x17);
 
         let mut chunks = vec![
             Chunk::new(String::from("|0100"), 0, 0),
@@ -141,12 +153,12 @@ mod tests {
     #[test]
     fn rom() {
         let mut rom = Rom::new();
-        rom[0] = 0x80;
-        rom[1] = 0x68;
-        rom[2] = 0x80;
-        rom[3] = 0x18;
+        rom.write_byte(0x100, 0x80);
+        rom.write_byte(0x101, 0x68);
+        rom.write_byte(0x102, 0x80);
+        rom.write_byte(0x103, 0x18);
         // skip one
-        rom[5] = 0x17;
+        rom.write_byte(0x105, 0x17);
         let expected: [u8; 6] = [0x80, 0x68, 0x80, 0x18, 0x00, 0x17];
 
         assert_eq!(rom.get_bytes(), expected);
