@@ -9,6 +9,7 @@ pub enum TokenType {
     LitByte(u8),
     LitShort(u16),
     AbsolutePadding(u16),
+    PaddingRelative(u16),
     CommentStart,
     CommentEnd,
     Ascii(String),
@@ -90,6 +91,33 @@ impl Token {
                 });
             } else {
                 return Err("could not parse AbsolutePadding".to_string());
+            }
+        }
+
+        if &chunk.value.as_str()[0..1] == "$" {
+            let number = &chunk.value[1..];
+            let number = if number.len() & 1 == 1 {
+                "0".to_string() + number
+            } else {
+                number.to_string()
+            };
+            match hex::decode(number.as_str()) {
+                Ok(bytes) => {
+                    if bytes.is_empty() {
+                        return Err("no bytes".to_string());
+                    } else {
+                        let mut value: u16 = 0;
+                        for byte in bytes {
+                            value = value << 8;
+                            value += byte as u16;
+                        }
+                        return Ok(Token {
+                            token_type: TokenType::PaddingRelative(value),
+                            chunk,
+                        });
+                    }
+                }
+                Err(_) => return Err("Could not parse hex".to_string()),
             }
         }
 
@@ -239,5 +267,18 @@ mod tests {
     fn bracket_works() {
         assert_match!("[", TokenType::Bracket);
         assert_match!("]", TokenType::Bracket);
+    }
+
+    #[test]
+    fn padding_relative_works() {
+        assert_match!("$5", TokenType::PaddingRelative(5));
+        assert_match!("$400", TokenType::PaddingRelative(0x400));
+    }
+
+    #[test]
+    fn padding_relative_fails() {
+        let chunk = Chunk::new("$".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
     }
 }

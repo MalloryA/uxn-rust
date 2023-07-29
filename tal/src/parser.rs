@@ -89,6 +89,9 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                         TokenType::AbsolutePadding(offset) => {
                             position = offset;
                         }
+                        TokenType::PaddingRelative(offset) => {
+                            position += offset;
+                        }
                         TokenType::CommentStart => {
                             comment_start = Some(chunk);
                         }
