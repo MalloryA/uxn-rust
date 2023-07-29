@@ -117,6 +117,9 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                         TokenType::LabelParent(name) => {
                             //TODO
                         }
+                        TokenType::Bracket => {
+                            // Ignore
+                        }
                         _ => todo!("{:?}", token),
                     },
                 },

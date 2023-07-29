@@ -13,6 +13,7 @@ pub enum TokenType {
     CommentEnd,
     Ascii(String),
     LabelParent(String),
+    Bracket,
 }
 
 #[derive(Debug, PartialEq)]
@@ -48,6 +49,12 @@ fn parse_short(s: &str) -> Result<u16, String> {
 
 impl Token {
     pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
+        if chunk.value == "[" || chunk.value == "]" {
+            return Ok(Token {
+                token_type: TokenType::Bracket,
+                chunk,
+            });
+        }
         if chunk.value == "(" {
             return Ok(Token {
                 token_type: TokenType::CommentStart,
@@ -201,5 +208,11 @@ mod tests {
         let chunk = Chunk::new("@".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn bracket_works() {
+        assert_match!("[", TokenType::Bracket);
+        assert_match!("]", TokenType::Bracket);
     }
 }
