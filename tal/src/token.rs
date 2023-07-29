@@ -13,6 +13,7 @@ pub enum TokenType {
     CommentEnd,
     Ascii(String),
     LabelParent(String),
+    LabelChild(String),
     Bracket,
 }
 
@@ -116,6 +117,18 @@ impl Token {
             }
         }
 
+        if &chunk.value.as_str()[0..1] == "&" {
+            let value = chunk.value[1..].to_string();
+            if value.is_empty() {
+                return Err("empty label child".to_string());
+            } else {
+                return Ok(Token {
+                    token_type: TokenType::LabelChild(value),
+                    chunk,
+                });
+            }
+        }
+
         if &chunk.value.as_str()[0..1] == "#" {
             if let Ok(byte) = parse_byte(&chunk.value[1..]) {
                 return Ok(Token {
@@ -206,6 +219,18 @@ mod tests {
     #[test]
     fn label_parent_fails() {
         let chunk = Chunk::new("@".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn label_child_works() {
+        assert_match!("&vector", TokenType::LabelChild("vector".to_string()));
+    }
+
+    #[test]
+    fn label_child_fails() {
+        let chunk = Chunk::new("&".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
     }
