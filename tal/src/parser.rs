@@ -8,7 +8,7 @@ use std::fmt::Formatter;
 
 #[derive(PartialEq)]
 pub struct Rom {
-    rom: [u8; 0x10000],
+    rom: [u8; 0xff00],
 }
 
 impl Debug for Rom {
@@ -20,19 +20,19 @@ impl Debug for Rom {
 
 impl Rom {
     pub fn new() -> Self {
-        Rom { rom: [0; 0x10000] }
+        Rom { rom: [0; 0xff00] }
     }
 
     pub fn write_byte(&mut self, position: u16, byte: u8) {
         if position < 0x100 {
             panic!("Cannot write at i < 0x100 where i={:x}", position);
         }
-        self.rom[position as usize] = byte;
+        self.rom[position as usize - 0x100] = byte;
     }
 
     pub fn get_bytes(&self) -> &[u8] {
         let mut last_non_null: Option<usize> = None;
-        let iter = self.rom.iter().skip(0x100);
+        let iter = self.rom.iter();
         for (i, byte) in iter.enumerate() {
             if *byte != 0x00 {
                 last_non_null = Some(i);
@@ -40,7 +40,7 @@ impl Rom {
         }
         match last_non_null {
             None => &[],
-            Some(size) => &self.rom[0x100..size + 0x101],
+            Some(size) => &self.rom[0..size + 1],
         }
     }
 }
