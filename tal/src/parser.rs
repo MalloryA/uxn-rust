@@ -1,4 +1,5 @@
 use crate::chunker::Chunk;
+use crate::opcode::Opcode;
 use crate::token::Token;
 use crate::token::TokenType;
 
@@ -72,6 +73,14 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
                         }
                         TokenType::CommentStart => {
                             comment = true;
+                        }
+                        TokenType::Ascii(value) => {
+                            for byte in value.bytes() {
+                                rom[position] = Opcode::LIT(false, false).as_byte();
+                                position += 1;
+                                rom[position] = byte;
+                                position += 1;
+                            }
                         }
                         _ => todo!("{:?}", token),
                     },

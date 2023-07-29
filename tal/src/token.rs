@@ -9,6 +9,7 @@ pub enum TokenType {
     PositionReset(u16),
     CommentStart,
     CommentEnd,
+    Ascii(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -75,6 +76,18 @@ impl Token {
             }
         }
 
+        if &chunk.value.as_str()[0..1] == "\"" {
+            let value = chunk.value[1..].to_string();
+            if value.len() == 0 {
+                return Err("empty ascii value".to_string());
+            } else {
+                return Ok(Token {
+                    token_type: TokenType::Ascii(value),
+                    chunk,
+                });
+            }
+        }
+
         if let Ok(byte) = parse_byte(&chunk.value) {
             return Ok(Token {
                 token_type: TokenType::RawByte(byte),
@@ -110,5 +123,17 @@ mod tests {
         assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
         assert_match!("12", TokenType::RawByte(0x12));
         assert_match!("|acab", TokenType::PositionReset(0xacab));
+    }
+
+    #[test]
+    fn ascii_works() {
+        assert_match!("\"foobar", TokenType::Ascii("foobar".to_string()));
+    }
+
+    #[test]
+    fn ascii_fails() {
+        let chunk = Chunk::new("\"".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
     }
 }
