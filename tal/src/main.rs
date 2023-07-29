@@ -46,7 +46,10 @@ fn main() {
     let result = read_and_write(&mut output, &mut input);
     match result {
         Ok(_) => println!("OK"),
-        Err(err) => println!("Error!!! {err:?}"),
+        Err(err) => {
+            println!("Error!!! {err:?}");
+            exit(1);
+        }
     }
 }
 
