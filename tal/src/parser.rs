@@ -76,8 +76,6 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
                         }
                         TokenType::Ascii(value) => {
                             for byte in value.bytes() {
-                                rom[position] = Opcode::LIT(false, false).as_byte();
-                                position += 1;
                                 rom[position] = byte;
                                 position += 1;
                             }

@@ -39,6 +39,7 @@ fn main() {
     let mut input = BufReader::new(File::open(input_path).unwrap());
     let mut output = OpenOptions::new()
         .write(true)
+        .truncate(true)
         .create(true)
         .open(output_path)
         .unwrap();

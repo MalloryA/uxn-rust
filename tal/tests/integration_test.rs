@@ -6,15 +6,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn assert_eq_files(left: PathBuf, right: PathBuf) {
-    let left = read(left);
-    assert!(left.is_ok());
-    let left = left.unwrap();
+    let _left = read(left.clone());
+    assert!(_left.is_ok(), "{left:?} should be OK");
+    let _left = _left.unwrap();
 
-    let right = read(right);
-    assert!(right.is_ok());
-    let right = right.unwrap();
+    let _right = read(right.clone());
+    assert!(_right.is_ok(), "{right:?} should be OK");
+    let _right = _right.unwrap();
 
-    assert_eq!(left, right);
+    assert_eq!(_left, _right, "{left:?} should match {right:?}");
 }
 
 fn test_file(tal: PathBuf, rom: PathBuf) {

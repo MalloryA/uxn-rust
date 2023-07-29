@@ -47,6 +47,7 @@ fn parse_short(s: &str) -> Result<u16, String> {
 
 impl Token {
     pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
+        println!("{:?}", chunk);
         if chunk.value == "(" {
             return Ok(Token {
                 token_type: TokenType::CommentStart,
