@@ -12,15 +12,15 @@ impl Error {
         Error { message, chunk }
     }
 
-    pub fn to_string_with_context(self, reader: &mut dyn BufRead) -> String {
+    pub fn to_string_with_context(&self, reader: &mut dyn BufRead) -> String {
         let line = reader.lines().nth(self.chunk.line);
         let line = line.unwrap();
         let line = line.unwrap();
         let mut arrows = "".to_string();
-        for i in 0..self.chunk.column {
+        for _ in 0..self.chunk.column {
             arrows.push(' ');
         }
-        for i in 0..self.chunk.value.len() {
+        for _ in 0..self.chunk.value.len() {
             arrows.push('^');
         }
         format!("Error: {}\n\n{}\n{}\n", self.message, line, arrows)
