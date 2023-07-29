@@ -12,6 +12,7 @@ pub enum TokenType {
     CommentStart,
     CommentEnd,
     Ascii(String),
+    LabelParent(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -96,6 +97,18 @@ impl Token {
             }
         }
 
+        if &chunk.value.as_str()[0..1] == "@" {
+            let value = chunk.value[1..].to_string();
+            if value.is_empty() {
+                return Err("empty label parent".to_string());
+            } else {
+                return Ok(Token {
+                    token_type: TokenType::LabelParent(value),
+                    chunk,
+                });
+            }
+        }
+
         if &chunk.value.as_str()[0..1] == "#" {
             if let Ok(byte) = parse_byte(&chunk.value[1..]) {
                 return Ok(Token {
@@ -174,6 +187,18 @@ mod tests {
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
         let chunk = Chunk::new("#123".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn label_parent_works() {
+        assert_match!("@System", TokenType::LabelParent("System".to_string()));
+    }
+
+    #[test]
+    fn label_parent_fails() {
+        let chunk = Chunk::new("@".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
     }

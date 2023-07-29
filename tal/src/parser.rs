@@ -114,6 +114,9 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, low);
                             position += 1;
                         }
+                        TokenType::LabelParent(name) => {
+                            //TODO
+                        }
                         _ => todo!("{:?}", token),
                     },
                 },
