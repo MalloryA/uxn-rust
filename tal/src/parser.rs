@@ -82,6 +82,22 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, String> {
                                 position += 1;
                             }
                         }
+                        TokenType::LitByte(byte) => {
+                            rom[position] = Opcode::LIT(false, false).as_byte();
+                            position += 1;
+                            rom[position] = byte;
+                            position += 1;
+                        }
+                        TokenType::LitShort(short) => {
+                            rom[position] = Opcode::LIT(false, false).as_byte();
+                            let high: u8 = (short >> 8).try_into().unwrap();
+                            let low: u8 = (short & 0xff).try_into().unwrap();
+                            position += 1;
+                            rom[position] = high;
+                            position += 1;
+                            rom[position] = low;
+                            position += 1;
+                        }
                         _ => todo!("{:?}", token),
                     },
                 },

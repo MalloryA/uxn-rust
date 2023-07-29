@@ -6,6 +6,8 @@ pub enum TokenType {
     MacroInvocation(String),
     Opcode(Opcode),
     RawByte(u8),
+    LitByte(u8),
+    LitShort(u16),
     PositionReset(u16),
     CommentStart,
     CommentEnd,
@@ -88,6 +90,22 @@ impl Token {
             }
         }
 
+        if &chunk.value.as_str()[0..1] == "#" {
+            if let Ok(byte) = parse_byte(&chunk.value[1..]) {
+                return Ok(Token {
+                    token_type: TokenType::LitByte(byte),
+                    chunk,
+                });
+            }
+            if let Ok(short) = parse_short(&chunk.value[1..]) {
+                return Ok(Token {
+                    token_type: TokenType::LitShort(short),
+                    chunk,
+                });
+            }
+            return Err("could not parse byte or short".to_string());
+        }
+
         if let Ok(byte) = parse_byte(&chunk.value) {
             return Ok(Token {
                 token_type: TokenType::RawByte(byte),
@@ -133,6 +151,22 @@ mod tests {
     #[test]
     fn ascii_fails() {
         let chunk = Chunk::new("\"".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn lit_shorthand_works() {
+        assert_match!("#13", TokenType::LitByte(0x13));
+        assert_match!("#1312", TokenType::LitShort(0x1312));
+    }
+
+    #[test]
+    fn lit_shorthand_fails() {
+        let chunk = Chunk::new("#".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        assert!(result.is_err());
+        let chunk = Chunk::new("#123".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
     }
