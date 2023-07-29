@@ -1,4 +1,5 @@
 mod chunker;
+mod error;
 mod opcode;
 mod parser;
 mod token;
