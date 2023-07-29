@@ -74,7 +74,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom[position] = byte;
                             position += 1;
                         }
-                        TokenType::PositionReset(offset) => {
+                        TokenType::AbsolutePadding(offset) => {
                             position = offset as usize - 0x100;
                         }
                         TokenType::CommentStart => {

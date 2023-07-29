@@ -8,7 +8,7 @@ pub enum TokenType {
     RawByte(u8),
     LitByte(u8),
     LitShort(u16),
-    PositionReset(u16),
+    AbsolutePadding(u16),
     CommentStart,
     CommentEnd,
     Ascii(String),
@@ -68,13 +68,19 @@ impl Token {
         }
 
         if &chunk.value.as_str()[0..1] == "|" {
-            if let Ok(short) = parse_short(&chunk.value[1..]) {
+            let number = &chunk.value[1..];
+            if let Ok(short) = parse_short(number) {
                 return Ok(Token {
-                    token_type: TokenType::PositionReset(short),
+                    token_type: TokenType::AbsolutePadding(short),
+                    chunk,
+                });
+            } else if let Ok(byte) = parse_byte(number) {
+                return Ok(Token {
+                    token_type: TokenType::AbsolutePadding(byte.into()),
                     chunk,
                 });
             } else {
-                return Err("could not parse PositionReset".to_string());
+                return Err("could not parse AbsolutePadding".to_string());
             }
         }
 
@@ -140,7 +146,8 @@ mod tests {
         assert_match!("DUP", TokenType::Opcode(Opcode::DUP(false, false, false)));
         assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
         assert_match!("12", TokenType::RawByte(0x12));
-        assert_match!("|acab", TokenType::PositionReset(0xacab));
+        assert_match!("|acab", TokenType::AbsolutePadding(0xacab));
+        assert_match!("|11", TokenType::AbsolutePadding(0x0011));
     }
 
     #[test]
