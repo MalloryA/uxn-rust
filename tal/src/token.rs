@@ -81,7 +81,7 @@ impl Token {
 
         if &chunk.value.as_str()[0..1] == "\"" {
             let value = chunk.value[1..].to_string();
-            if value.len() == 0 {
+            if value.is_empty() {
                 return Err("empty ascii value".to_string());
             } else {
                 return Ok(Token {
