@@ -1,0 +1,12 @@
+( https://compudanzas.net/uxn_tutorial_day_2.html )
+( hello-screen.tal )
+
+( devices )
+|00 @System  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+
+( main program )
+|0100
+      ( set system colors )
+      #2ce9 .System/r DEO2
+      #01c0 .System/g DEO2
+      #2ce5 .System/b DEO2
