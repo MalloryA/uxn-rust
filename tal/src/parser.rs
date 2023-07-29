@@ -86,7 +86,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, byte);
                             position += 1;
                         }
-                        TokenType::AbsolutePadding(offset) => {
+                        TokenType::PaddingAbsolute(offset) => {
                             position = offset;
                         }
                         TokenType::PaddingRelative(offset) => {
