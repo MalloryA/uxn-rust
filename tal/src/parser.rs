@@ -111,16 +111,20 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             position += 1;
                         }
                         TokenType::LitShort(short) => {
-                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                            position += 1;
+
                             let high: u8 = (short >> 8).try_into().unwrap();
                             let low: u8 = (short & 0xff).try_into().unwrap();
-                            position += 1;
                             rom.write_byte(position, high);
                             position += 1;
                             rom.write_byte(position, low);
                             position += 1;
                         }
                         TokenType::AddressLiteralZeroPage(parent, child) => {
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                            position += 1;
+
                             let full_name = format!("{}/{}", parent, child);
                             let short = address_references.get(&full_name);
                             if short.is_none() {
@@ -128,11 +132,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             }
                             let short = short.unwrap();
 
-                            let high: u8 = (short >> 8).try_into().unwrap();
                             let low: u8 = (short & 0xff).try_into().unwrap();
-                            position += 1;
-                            rom.write_byte(position, high);
-                            position += 1;
                             rom.write_byte(position, low);
                             position += 1;
                         }
@@ -170,14 +170,22 @@ mod tests {
         expected.write_byte(0x102, 0x80);
         expected.write_byte(0x103, 0x18);
         expected.write_byte(0x104, 0x17);
+        expected.write_byte(0x105, 0x80);
+        expected.write_byte(0x106, 0x00);
+        expected.write_byte(0x107, 0x37);
 
         let mut chunks = vec![
-            Chunk::new(String::from("|0100"), 0, 0),
-            Chunk::new(String::from("LIT"), 0, 7),
-            Chunk::new(String::from("68"), 0, 11),
-            Chunk::new(String::from("LIT"), 0, 14),
-            Chunk::new(String::from("18"), 0, 18),
-            Chunk::new(String::from("DEO"), 0, 21),
+            Chunk::new(String::from("|00"), 0, 0),
+            Chunk::new(String::from("@System"), 0, 4),
+            Chunk::new(String::from("&vector"), 0, 12),
+            Chunk::new(String::from("|0100"), 1, 0),
+            Chunk::new(String::from("LIT"), 1, 7),
+            Chunk::new(String::from("68"), 1, 11),
+            Chunk::new(String::from("LIT"), 1, 14),
+            Chunk::new(String::from("18"), 1, 18),
+            Chunk::new(String::from("DEO"), 1, 21),
+            Chunk::new(String::from(".System/vector"), 2, 0),
+            Chunk::new(String::from("DEO2"), 2, 15),
         ]
         .into_iter();
         let result = parse(&mut chunks);
