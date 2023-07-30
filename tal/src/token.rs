@@ -30,13 +30,8 @@ impl TokenType {
             ")" => Some(TokenType::CommentEnd),
             _ => None,
         };
-        match token_type {
-            Some(tt) => {
-                return Ok(tt);
-            }
-            None => {
-                // Do nothing
-            }
+        if let Some(tt) = token_type {
+            return Ok(tt);
         }
 
         // Raw byte/short
@@ -77,7 +72,7 @@ impl TokenType {
                         } else {
                             let mut value: u16 = 0;
                             for byte in bytes {
-                                value = value << 8;
+                                value <<= 8;
                                 value += byte as u16;
                             }
                             Some(TokenType::PaddingRelative(value))
@@ -125,7 +120,7 @@ impl TokenType {
             }
 
             "." => {
-                if let Some(i) = chunk.value.find("/") {
+                if let Some(i) = chunk.value.find('/') {
                     let parent = chunk.value[1..i].to_string();
                     let child = chunk.value[i + 1..].to_string();
                     if parent.is_empty() || child.is_empty() {
@@ -139,13 +134,8 @@ impl TokenType {
 
             _ => None,
         };
-        match token_type {
-            Some(tt) => {
-                return Ok(tt);
-            }
-            None => {
-                // Do nothing
-            }
+        if let Some(tt) = token_type {
+            return Ok(tt);
         }
 
         // Match opcode
