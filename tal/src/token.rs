@@ -17,6 +17,7 @@ pub enum TokenType {
     LabelParent(String),
     LabelChild(String),
     Bracket,
+    AddressLiteralZeroPage(String, String),
 }
 
 impl TokenType {
@@ -123,6 +124,19 @@ impl TokenType {
                 }
             }
 
+            "." => {
+                if let Some(i) = chunk.value.find("/") {
+                    let parent = chunk.value[1..i].to_string();
+                    let child = chunk.value[i + 1..].to_string();
+                    if parent.is_empty() || child.is_empty() {
+                        return Err("could not parse AddressLiteralZeroPage".to_string());
+                    }
+                    Some(TokenType::AddressLiteralZeroPage(parent, child))
+                } else {
+                    return Err("could not parse AddressLiteralZeroPage".to_string());
+                }
+            }
+
             _ => None,
         };
         match token_type {
@@ -199,6 +213,14 @@ mod tests {
         }};
     }
 
+    macro_rules! assert_err {
+        ( $a:expr ) => {{
+            let chunk = Chunk::new($a.to_string(), 0, 0);
+            let result = Token::from_chunk(chunk);
+            assert!(result.is_err());
+        }};
+    }
+
     #[test]
     fn it_works() {
         assert_match!("cat", TokenType::MacroInvocation(String::from("cat")));
@@ -216,9 +238,7 @@ mod tests {
 
     #[test]
     fn ascii_fails() {
-        let chunk = Chunk::new("\"".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
+        assert_err!("\"");
     }
 
     #[test]
@@ -229,12 +249,8 @@ mod tests {
 
     #[test]
     fn lit_shorthand_fails() {
-        let chunk = Chunk::new("#".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
-        let chunk = Chunk::new("#123".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
+        assert_err!("#");
+        assert_err!("#123");
     }
 
     #[test]
@@ -244,9 +260,7 @@ mod tests {
 
     #[test]
     fn label_parent_fails() {
-        let chunk = Chunk::new("@".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
+        assert_err!("@");
     }
 
     #[test]
@@ -256,9 +270,7 @@ mod tests {
 
     #[test]
     fn label_child_fails() {
-        let chunk = Chunk::new("&".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
+        assert_err!("&");
     }
 
     #[test]
@@ -275,9 +287,7 @@ mod tests {
 
     #[test]
     fn padding_relative_fails() {
-        let chunk = Chunk::new("$".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
-        assert!(result.is_err());
+        assert_err!("$");
     }
 
     #[test]
@@ -287,10 +297,10 @@ mod tests {
 
     #[test]
     fn raw_byte_fails() {
+        // TODO
+        //assert_err!("A");
         let chunk = Chunk::new("A".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
-        // TODO
-        //assert!(result.is_err());
         assert_eq!(
             result.unwrap().token_type,
             TokenType::MacroInvocation("A".to_string())
@@ -304,13 +314,28 @@ mod tests {
 
     #[test]
     fn raw_short_fails() {
+        // TODO
+        //assert_err!("ABC");
         let chunk = Chunk::new("ABC".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
-        // TODO
-        //assert!(result.is_err());
         assert_eq!(
             result.unwrap().token_type,
             TokenType::MacroInvocation("ABC".to_string())
         );
+    }
+
+    #[test]
+    fn address_literal_zero_page_works() {
+        assert_match!(
+            ".Foo/bar",
+            TokenType::AddressLiteralZeroPage("Foo".to_string(), "bar".to_string())
+        );
+    }
+
+    #[test]
+    fn address_literal_zero_page_fails() {
+        assert_err!(".Foo");
+        assert_err!(".Foo/");
+        assert_err!("./bar");
     }
 }

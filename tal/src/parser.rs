@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::token::Token;
 use crate::token::TokenType;
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 
@@ -48,6 +49,8 @@ impl Rom {
 pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
     let mut comment_start: Option<Chunk> = None;
     let mut position: u16 = 0;
+    let mut parent: Option<String> = None;
+    let mut address_references: HashMap<String, u16> = HashMap::new();
 
     let mut rom = Rom::new();
 
@@ -117,11 +120,32 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, low);
                             position += 1;
                         }
+                        TokenType::AddressLiteralZeroPage(parent, child) => {
+                            let full_name = format!("{}/{}", parent, child);
+                            let short = address_references.get(&full_name);
+                            if short.is_none() {
+                                return Err(Error::new("oh no".to_string(), chunk));
+                            }
+                            let short = short.unwrap();
+
+                            let high: u8 = (short >> 8).try_into().unwrap();
+                            let low: u8 = (short & 0xff).try_into().unwrap();
+                            position += 1;
+                            rom.write_byte(position, high);
+                            position += 1;
+                            rom.write_byte(position, low);
+                            position += 1;
+                        }
                         TokenType::LabelParent(name) => {
-                            //TODO
+                            parent = Some(name);
                         }
                         TokenType::LabelChild(name) => {
-                            //TODO
+                            if let Some(parent_name) = parent.clone() {
+                                let full_name = format!("{}/{}", parent_name, name);
+                                address_references.insert(full_name, position);
+                            } else {
+                                return Err(Error::new("oh no".to_string(), chunk));
+                            }
                         }
                         TokenType::Bracket => {
                             // Ignore
