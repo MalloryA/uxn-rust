@@ -121,12 +121,11 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, low);
                             position += 1;
                         }
-                        TokenType::AddressLiteralZeroPage(parent, child) => {
+                        TokenType::AddressLiteralZeroPage(name) => {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            let full_name = format!("{}/{}", parent, child);
-                            let short = address_references.get(&full_name);
+                            let short = address_references.get(&name);
                             if short.is_none() {
                                 return Err(Error::new("oh no".to_string(), chunk));
                             }

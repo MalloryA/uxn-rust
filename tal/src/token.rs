@@ -17,7 +17,7 @@ pub enum TokenType {
     LabelParent(String),
     LabelChild(String),
     Bracket,
-    AddressLiteralZeroPage(String, String),
+    AddressLiteralZeroPage(String),
 }
 
 impl TokenType {
@@ -126,16 +126,11 @@ impl TokenType {
             }
 
             "." => {
-                if let Some(i) = chunk.value.find('/') {
-                    let parent = chunk.value[1..i].to_string();
-                    let child = chunk.value[i + 1..].to_string();
-                    if parent.is_empty() || child.is_empty() {
-                        return Err("could not parse AddressLiteralZeroPage (A)".to_string());
-                    }
-                    Some(TokenType::AddressLiteralZeroPage(parent, child))
-                } else {
-                    return Err("could not parse AddressLiteralZeroPage (B)".to_string());
+                let name = &chunk.value[1..];
+                if name.is_empty() {
+                    return Err("could not parse AddressLiteralZeroPage".to_string());
                 }
+                Some(TokenType::AddressLiteralZeroPage(name.to_string()))
             }
 
             _ => None,
@@ -318,15 +313,14 @@ mod tests {
     fn address_literal_zero_page_works() {
         assert_match!(
             ".Foo/bar",
-            TokenType::AddressLiteralZeroPage("Foo".to_string(), "bar".to_string())
+            TokenType::AddressLiteralZeroPage("Foo/bar".to_string())
         );
+        assert_match!(".Foo", TokenType::AddressLiteralZeroPage("Foo".to_string()));
     }
 
     #[test]
     fn address_literal_zero_page_fails() {
-        assert_err!(".Foo");
-        assert_err!(".Foo/");
-        assert_err!("./bar");
+        assert_err!(".");
     }
 
     #[test]
