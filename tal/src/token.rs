@@ -34,6 +34,12 @@ impl TokenType {
             return Ok(tt);
         }
 
+        // Match opcode
+
+        if let Ok(opcode) = Opcode::from_str(&chunk.value) {
+            return Ok(TokenType::Opcode(opcode));
+        }
+
         // Raw byte/short
 
         if let Ok(byte) = parse_byte(&chunk.value) {
@@ -136,12 +142,6 @@ impl TokenType {
         };
         if let Some(tt) = token_type {
             return Ok(tt);
-        }
-
-        // Match opcode
-
-        if let Ok(opcode) = Opcode::from_str(&chunk.value) {
-            return Ok(TokenType::Opcode(opcode));
         }
 
         // Default assumption
@@ -327,5 +327,10 @@ mod tests {
         assert_err!(".Foo");
         assert_err!(".Foo/");
         assert_err!("./bar");
+    }
+
+    #[test]
+    fn opcode_takes_precidence_over_raw_short() {
+        assert_match!("ADD2", TokenType::Opcode(Opcode::ADD(true, false, false)));
     }
 }
