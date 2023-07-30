@@ -127,7 +127,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
 
                             let short = address_references.get(&name);
                             if short.is_none() {
-                                return Err(Error::new("oh no".to_string(), chunk));
+                                todo!("TODO: Implement two-pass parsing");
                             }
                             let short = short.unwrap();
 
@@ -143,7 +143,10 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 let full_name = format!("{}/{}", parent_name, name);
                                 address_references.insert(full_name, position);
                             } else {
-                                return Err(Error::new("oh no".to_string(), chunk));
+                                return Err(Error::new(
+                                    "child label specified before parent label".to_string(),
+                                    chunk,
+                                ));
                             }
                         }
                         TokenType::MacroOrAddress(name) => {
