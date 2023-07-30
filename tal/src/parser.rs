@@ -147,6 +147,10 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 return Err(Error::new("oh no".to_string(), chunk));
                             }
                         }
+                        TokenType::MacroOrAddress(name) => {
+                            // TODO
+                            position += 2;
+                        }
                         TokenType::Bracket => {
                             // Ignore
                         }
