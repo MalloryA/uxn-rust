@@ -6,6 +6,7 @@ pub enum TokenType {
     MacroInvocation(String),
     Opcode(Opcode),
     RawByte(u8),
+    RawShort(u16),
     LitByte(u8),
     LitShort(u16),
     PaddingAbsolute(u16),
@@ -16,6 +17,133 @@ pub enum TokenType {
     LabelParent(String),
     LabelChild(String),
     Bracket,
+}
+
+impl TokenType {
+    pub fn from_chunk(chunk: Chunk) -> Result<TokenType, String> {
+        // Match whole token
+
+        let token_type = match chunk.value.as_str() {
+            "[" | "]" => Some(TokenType::Bracket),
+            "(" => Some(TokenType::CommentStart),
+            ")" => Some(TokenType::CommentEnd),
+            _ => None,
+        };
+        match token_type {
+            Some(tt) => {
+                return Ok(tt);
+            }
+            None => {
+                // Do nothing
+            }
+        }
+
+        // Raw byte/short
+
+        if let Ok(byte) = parse_byte(&chunk.value) {
+            return Ok(TokenType::RawByte(byte));
+        }
+
+        if let Ok(short) = parse_short(&chunk.value) {
+            return Ok(TokenType::RawShort(short));
+        }
+
+        // Match first character
+
+        let token_type = match &chunk.value.as_str()[0..1] {
+            "|" => {
+                let number = &chunk.value[1..];
+                if let Ok(short) = parse_short(number) {
+                    Some(TokenType::PaddingAbsolute(short))
+                } else if let Ok(byte) = parse_byte(number) {
+                    Some(TokenType::PaddingAbsolute(byte.into()))
+                } else {
+                    return Err("could not parse PaddingAbsolute".to_string());
+                }
+            }
+
+            "$" => {
+                let number = &chunk.value[1..];
+                let number = if number.len() & 1 == 1 {
+                    "0".to_string() + number
+                } else {
+                    number.to_string()
+                };
+                match hex::decode(number.as_str()) {
+                    Ok(bytes) => {
+                        if bytes.is_empty() {
+                            return Err("no bytes".to_string());
+                        } else {
+                            let mut value: u16 = 0;
+                            for byte in bytes {
+                                value = value << 8;
+                                value += byte as u16;
+                            }
+                            Some(TokenType::PaddingRelative(value))
+                        }
+                    }
+                    Err(_) => return Err("Could not parse hex".to_string()),
+                }
+            }
+
+            "\"" => {
+                let value = chunk.value[1..].to_string();
+                if value.is_empty() {
+                    return Err("empty ascii value".to_string());
+                } else {
+                    Some(TokenType::Ascii(value))
+                }
+            }
+
+            "@" => {
+                let value = chunk.value[1..].to_string();
+                if value.is_empty() {
+                    return Err("empty label parent".to_string());
+                } else {
+                    Some(TokenType::LabelParent(value))
+                }
+            }
+
+            "&" => {
+                let value = chunk.value[1..].to_string();
+                if value.is_empty() {
+                    return Err("empty label child".to_string());
+                } else {
+                    Some(TokenType::LabelChild(value))
+                }
+            }
+
+            "#" => {
+                if let Ok(byte) = parse_byte(&chunk.value[1..]) {
+                    Some(TokenType::LitByte(byte))
+                } else if let Ok(short) = parse_short(&chunk.value[1..]) {
+                    Some(TokenType::LitShort(short))
+                } else {
+                    return Err("could not parse byte or short".to_string());
+                }
+            }
+
+            _ => None,
+        };
+        match token_type {
+            Some(tt) => {
+                return Ok(tt);
+            }
+            None => {
+                // Do nothing
+            }
+        }
+
+        // Match opcode
+
+        if let Ok(opcode) = Opcode::from_str(&chunk.value) {
+            return Ok(TokenType::Opcode(opcode));
+        }
+
+        // Default assumption
+
+        Ok(TokenType::MacroInvocation(chunk.value.clone()))
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,139 +179,9 @@ fn parse_short(s: &str) -> Result<u16, String> {
 
 impl Token {
     pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
-        if chunk.value == "[" || chunk.value == "]" {
-            return Ok(Token {
-                token_type: TokenType::Bracket,
-                chunk,
-            });
-        }
-        if chunk.value == "(" {
-            return Ok(Token {
-                token_type: TokenType::CommentStart,
-                chunk,
-            });
-        }
-        if chunk.value == ")" {
-            return Ok(Token {
-                token_type: TokenType::CommentEnd,
-                chunk,
-            });
-        }
+        let token_type = TokenType::from_chunk(chunk.clone())?;
 
-        if let Ok(opcode) = Opcode::from_str(&chunk.value) {
-            return Ok(Token {
-                token_type: TokenType::Opcode(opcode),
-                chunk,
-            });
-        }
-
-        if &chunk.value.as_str()[0..1] == "|" {
-            let number = &chunk.value[1..];
-            if let Ok(short) = parse_short(number) {
-                return Ok(Token {
-                    token_type: TokenType::PaddingAbsolute(short),
-                    chunk,
-                });
-            } else if let Ok(byte) = parse_byte(number) {
-                return Ok(Token {
-                    token_type: TokenType::PaddingAbsolute(byte.into()),
-                    chunk,
-                });
-            } else {
-                return Err("could not parse PaddingAbsolute".to_string());
-            }
-        }
-
-        if &chunk.value.as_str()[0..1] == "$" {
-            let number = &chunk.value[1..];
-            let number = if number.len() & 1 == 1 {
-                "0".to_string() + number
-            } else {
-                number.to_string()
-            };
-            match hex::decode(number.as_str()) {
-                Ok(bytes) => {
-                    if bytes.is_empty() {
-                        return Err("no bytes".to_string());
-                    } else {
-                        let mut value: u16 = 0;
-                        for byte in bytes {
-                            value = value << 8;
-                            value += byte as u16;
-                        }
-                        return Ok(Token {
-                            token_type: TokenType::PaddingRelative(value),
-                            chunk,
-                        });
-                    }
-                }
-                Err(_) => return Err("Could not parse hex".to_string()),
-            }
-        }
-
-        if &chunk.value.as_str()[0..1] == "\"" {
-            let value = chunk.value[1..].to_string();
-            if value.is_empty() {
-                return Err("empty ascii value".to_string());
-            } else {
-                return Ok(Token {
-                    token_type: TokenType::Ascii(value),
-                    chunk,
-                });
-            }
-        }
-
-        if &chunk.value.as_str()[0..1] == "@" {
-            let value = chunk.value[1..].to_string();
-            if value.is_empty() {
-                return Err("empty label parent".to_string());
-            } else {
-                return Ok(Token {
-                    token_type: TokenType::LabelParent(value),
-                    chunk,
-                });
-            }
-        }
-
-        if &chunk.value.as_str()[0..1] == "&" {
-            let value = chunk.value[1..].to_string();
-            if value.is_empty() {
-                return Err("empty label child".to_string());
-            } else {
-                return Ok(Token {
-                    token_type: TokenType::LabelChild(value),
-                    chunk,
-                });
-            }
-        }
-
-        if &chunk.value.as_str()[0..1] == "#" {
-            if let Ok(byte) = parse_byte(&chunk.value[1..]) {
-                return Ok(Token {
-                    token_type: TokenType::LitByte(byte),
-                    chunk,
-                });
-            }
-            if let Ok(short) = parse_short(&chunk.value[1..]) {
-                return Ok(Token {
-                    token_type: TokenType::LitShort(short),
-                    chunk,
-                });
-            }
-            return Err("could not parse byte or short".to_string());
-        }
-
-        if let Ok(byte) = parse_byte(&chunk.value) {
-            return Ok(Token {
-                token_type: TokenType::RawByte(byte),
-                chunk,
-            });
-        }
-
-        Ok(Token {
-            token_type: TokenType::MacroInvocation(chunk.value.clone()),
-            chunk,
-        })
+        Ok(Token { token_type, chunk })
     }
 }
 
@@ -280,5 +278,39 @@ mod tests {
         let chunk = Chunk::new("$".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn raw_byte_works() {
+        assert_match!("AB", TokenType::RawByte(0xab));
+    }
+
+    #[test]
+    fn raw_byte_fails() {
+        let chunk = Chunk::new("A".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        // TODO
+        //assert!(result.is_err());
+        assert_eq!(
+            result.unwrap().token_type,
+            TokenType::MacroInvocation("A".to_string())
+        );
+    }
+
+    #[test]
+    fn raw_short_works() {
+        assert_match!("ABCD", TokenType::RawShort(0xabcd));
+    }
+
+    #[test]
+    fn raw_short_fails() {
+        let chunk = Chunk::new("ABC".to_string(), 0, 0);
+        let result = Token::from_chunk(chunk);
+        // TODO
+        //assert!(result.is_err());
+        assert_eq!(
+            result.unwrap().token_type,
+            TokenType::MacroInvocation("ABC".to_string())
+        );
     }
 }
