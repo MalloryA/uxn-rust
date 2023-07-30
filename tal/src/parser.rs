@@ -7,6 +7,17 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 
+fn split_short(short: u16) -> (u8, u8) {
+    let high: u8 = (short >> 8).try_into().unwrap();
+    let low: u8 = (short & 0xff).try_into().unwrap();
+    (high, low)
+}
+
+enum FillLater {
+    Byte(u16, String),
+    Short(u16, String),
+}
+
 #[derive(PartialEq)]
 pub struct Rom {
     rom: [u8; 0xff00],
@@ -49,8 +60,15 @@ impl Rom {
 pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
     let mut comment_start: Option<Chunk> = None;
     let mut position: u16 = 0;
+
+    // Addresses, references, etc
+
+    // The current parent address
     let mut parent: Option<String> = None;
+    // Map of names to the addresses they refer to
     let mut address_references: HashMap<String, u16> = HashMap::new();
+    // Map of addresses to the names of references that should be filled in
+    let mut fill_later: Vec<FillLater> = vec![];
 
     let mut rom = Rom::new();
 
@@ -89,6 +107,13 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, byte);
                             position += 1;
                         }
+                        TokenType::RawShort(short) => {
+                            let (high, low) = split_short(short);
+                            rom.write_byte(position, high);
+                            position += 1;
+                            rom.write_byte(position, low);
+                            position += 1;
+                        }
                         TokenType::PaddingAbsolute(offset) => {
                             position = offset;
                         }
@@ -114,8 +139,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                             position += 1;
 
-                            let high: u8 = (short >> 8).try_into().unwrap();
-                            let low: u8 = (short & 0xff).try_into().unwrap();
+                            let (high, low) = split_short(short);
                             rom.write_byte(position, high);
                             position += 1;
                             rom.write_byte(position, low);
@@ -125,14 +149,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            let short = address_references.get(&name);
-                            if short.is_none() {
-                                todo!("TODO: Implement two-pass parsing");
-                            }
-                            let short = short.unwrap();
-
-                            let low: u8 = (short & 0xff).try_into().unwrap();
-                            rom.write_byte(position, low);
+                            fill_later.push(FillLater::Byte(position, name));
                             position += 1;
                         }
                         TokenType::LabelParent(name) => {
