@@ -60,7 +60,10 @@ mod tests {
             chunk: Chunk::new(".octave".to_string(), 108, 32),
         };
 
-        let mut reader = BufReader::new(File::open("tests/roms/piano.tal").unwrap());
+        let mut reader = Cursor::new(
+            "\n".repeat(108)
+                + "\t[ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n",
+        );
         let error_with_context = err.to_string_with_context(&mut reader);
         let expected = "Error: could not parse AddressLiteralZeroPage\n\n        [ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n                                       ^^^^^^^";
         assert_eq!(error_with_context, expected);
@@ -73,7 +76,7 @@ mod tests {
             chunk: Chunk::new(".center/x".to_string(), 31, 7),
         };
 
-        let mut reader = BufReader::new(File::open("tests/roms/piano.tal").unwrap());
+        let mut reader = Cursor::new("\n".repeat(31) + "\t\tDUP2 .center/x STZ2");
         let error_with_context = err.to_string_with_context(&mut reader);
         let expected = "Error: could not parse AddressLiteralZeroPage\n\n                DUP2 .center/x STZ2\n                     ^^^^^^^^^";
         assert_eq!(error_with_context, expected);
