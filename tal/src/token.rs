@@ -130,11 +130,11 @@ impl TokenType {
                     let parent = chunk.value[1..i].to_string();
                     let child = chunk.value[i + 1..].to_string();
                     if parent.is_empty() || child.is_empty() {
-                        return Err("could not parse AddressLiteralZeroPage".to_string());
+                        return Err("could not parse AddressLiteralZeroPage (A)".to_string());
                     }
                     Some(TokenType::AddressLiteralZeroPage(parent, child))
                 } else {
-                    return Err("could not parse AddressLiteralZeroPage".to_string());
+                    return Err("could not parse AddressLiteralZeroPage (B)".to_string());
                 }
             }
 

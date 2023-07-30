@@ -49,6 +49,7 @@ fn main() {
         Ok(_) => println!("OK"),
         Err(err) => {
             let mut input = BufReader::new(File::open(input_path).unwrap());
+            println!("{:?}", err);
             println!("{}", err.to_string_with_context(&mut input));
             exit(1);
         }
