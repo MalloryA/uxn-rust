@@ -14,8 +14,8 @@ fn split_short(short: u16) -> (u8, u8) {
 }
 
 enum FillLater {
-    Byte(u16, String),
-    Short(u16, String),
+    Byte(u16, String, Chunk),
+    Short(u16, String, Chunk),
 }
 
 #[derive(PartialEq)]
@@ -25,7 +25,16 @@ pub struct Rom {
 
 impl Debug for Rom {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.write_fmt(format_args!("{}", hex::encode(self.get_bytes())))?;
+        for (i, byte) in self.get_bytes().into_iter().enumerate() {
+            if i != 0 {
+                if i % 16 == 0 {
+                    f.write_str("\n")?;
+                } else if i % 2 == 0 {
+                    f.write_str(" ")?;
+                }
+            }
+            f.write_fmt(format_args!("{:02x}", byte))?;
+        }
         Ok(())
     }
 }
@@ -94,6 +103,27 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
         } else {
             match next {
                 None => {
+                    // Fill in all the fill_laters
+                    for fill in fill_later {
+                        match fill {
+                            FillLater::Byte(target, name, chunk) => {
+                                let source = address_references.get(&name);
+                                if source == None {
+                                    return Err(Error::new(
+                                        format!("unknown name \"{name}\""),
+                                        chunk,
+                                    ));
+                                }
+                                let source = source.unwrap();
+                                let (_high, low) = split_short(*source);
+                                rom.write_byte(target, low);
+                            }
+                            FillLater::Short(target, name, chunk) => {
+                                todo!();
+                            }
+                        }
+                    }
+
                     return Ok(rom);
                 }
                 Some(chunk) => match Token::from_chunk(chunk.clone()) {
@@ -149,7 +179,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Byte(position, name));
+                            fill_later.push(FillLater::Byte(position, name, chunk));
                             position += 1;
                         }
                         TokenType::LabelParent(name) => {
@@ -184,6 +214,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn it_works() {
@@ -229,5 +260,20 @@ mod tests {
         let expected: [u8; 6] = [0x80, 0x68, 0x80, 0x18, 0x00, 0x17];
 
         assert_eq!(rom.get_bytes(), expected);
+    }
+
+    #[test]
+    fn rom_debug() {
+        let mut rom = Rom::new();
+        rom.write_byte(0x100, 0x80);
+        rom.write_byte(0x101, 0x68);
+        rom.write_byte(0x102, 0x80);
+        rom.write_byte(0x103, 0x18);
+        // skip a few
+        rom.write_byte(0x125, 0x17);
+
+        let actual = format!("{:?}", rom);
+        let expected = "8068 8018 0000 0000 0000 0000 0000 0000\n0000 0000 0000 0000 0000 0000 0000 0000\n0000 0000 0017".to_string();
+        assert_eq!(actual, expected);
     }
 }
