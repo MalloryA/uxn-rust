@@ -14,7 +14,7 @@ fn split_short(short: u16) -> (u8, u8) {
 }
 
 enum FillLater {
-    Byte(u16, String, Chunk),
+    Byte(u16, bool, String, Chunk),
     Short(u16, bool, String, Chunk),
 }
 
@@ -106,7 +106,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                     // Fill in all the fill_laters
                     for fill in fill_later {
                         match fill {
-                            FillLater::Byte(target, name, chunk) => {
+                            FillLater::Byte(target, relative, name, chunk) => {
                                 let source = address_references.get(&name);
                                 if source == None {
                                     return Err(Error::new(
@@ -114,8 +114,12 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                         chunk,
                                     ));
                                 }
-                                let source = source.unwrap();
-                                let (_high, low) = split_short(*source);
+                                let mut source = *source.unwrap();
+                                if relative {
+                                    // Unclear why uxnasm wraps these
+                                    source = source.wrapping_sub(target).wrapping_sub(2);
+                                }
+                                let (_high, low) = split_short(source);
                                 rom.write_byte(target, low);
                             }
                             FillLater::Short(target, relative, name, chunk) => {
@@ -128,13 +132,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 }
                                 let mut source = *source.unwrap();
                                 if relative {
-                                    if source < target {
-                                        return Err(Error::new(
-                                        format!("filling in \"{name}\" resulted in underflow (source={source}, target={target})"),
-                                        chunk,
-                                    ));
-                                    }
-                                    source = source - target;
+                                    source = source.wrapping_sub(target).wrapping_sub(2);
                                 }
                                 let (high, low) = split_short(source);
                                 rom.write_byte(target, high);
@@ -212,7 +210,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Byte(position, full_name, chunk));
+                            fill_later.push(FillLater::Byte(position, false, full_name, chunk));
                             position += 1;
                         }
                         TokenType::AddressLiteralAbsolute(name, child) => {
@@ -254,8 +252,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Short(position, true, full_name, chunk));
-                            position += 2;
+                            fill_later.push(FillLater::Byte(position, true, full_name, chunk));
+                            position += 1;
                         }
                         TokenType::AddressRawAbsolute(name, child) => {
                             // TODO: DRY
