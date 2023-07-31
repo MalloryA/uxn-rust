@@ -18,6 +18,7 @@ pub enum TokenType {
     LabelChild(String),
     Bracket,
     AddressLiteralZeroPage(String),
+    AddressLiteralAbsolute(String),
 }
 
 impl TokenType {
@@ -131,6 +132,14 @@ impl TokenType {
                     return Err("could not parse AddressLiteralZeroPage".to_string());
                 }
                 Some(TokenType::AddressLiteralZeroPage(name.to_string()))
+            }
+
+            ";" => {
+                let name = &chunk.value[1..];
+                if name.is_empty() {
+                    return Err("could not parse AddressLiteralAbsolute".to_string());
+                }
+                Some(TokenType::AddressLiteralAbsolute(name.to_string()))
             }
 
             _ => None,
@@ -321,6 +330,19 @@ mod tests {
     #[test]
     fn address_literal_zero_page_fails() {
         assert_err!(".");
+    }
+
+    #[test]
+    fn address_literal_absolute_works() {
+        assert_match!(
+            ";foo-bar",
+            TokenType::AddressLiteralAbsolute("foo-bar".to_string())
+        );
+    }
+
+    #[test]
+    fn address_literal_absolute_fails() {
+        assert_err!(";");
     }
 
     #[test]

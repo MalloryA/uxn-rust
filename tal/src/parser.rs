@@ -192,6 +192,13 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             fill_later.push(FillLater::Byte(position, name, chunk));
                             position += 1;
                         }
+                        TokenType::AddressLiteralAbsolute(name) => {
+                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Short(position, name, chunk));
+                            position += 2;
+                        }
                         TokenType::LabelParent(name) => {
                             parent = Some(name.clone());
                             address_references.insert(name, position);
