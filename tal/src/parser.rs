@@ -183,7 +183,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             position += 1;
                         }
                         TokenType::LabelParent(name) => {
-                            parent = Some(name);
+                            parent = Some(name.clone());
+                            address_references.insert(name, position);
                         }
                         TokenType::LabelChild(name) => {
                             if let Some(parent_name) = parent.clone() {
