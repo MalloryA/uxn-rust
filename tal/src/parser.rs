@@ -393,6 +393,58 @@ mod tests {
     }
 
     #[test]
+    fn forward_references_work() {
+        let mut expected = Rom::new();
+        expected.write_byte(0x100, 0x80);
+        expected.write_byte(0x101, 0x02);
+        expected.write_byte(0x102, 0xa0);
+        expected.write_byte(0x103, 0x12);
+        expected.write_byte(0x104, 0x34);
+        expected.write_byte(0x105, 0xa0);
+        expected.write_byte(0x106, 0x56);
+        expected.write_byte(0x107, 0x78);
+
+        let mut chunks = vec![
+            Chunk::new(String::from("|0100"), 0, 0),
+            Chunk::new(String::from(",foo"), 0, 6),
+            Chunk::new(String::from("#1234"), 0, 11),
+            Chunk::new(String::from("@foo"), 0, 17),
+            Chunk::new(String::from("#5678"), 0, 23),
+        ]
+        .into_iter();
+        let result = parse(&mut chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected);
+    }
+
+    #[test]
+    fn backward_references_work() {
+        let mut expected = Rom::new();
+        expected.write_byte(0x100, 0xa0);
+        expected.write_byte(0x101, 0x12);
+        expected.write_byte(0x102, 0x34);
+        expected.write_byte(0x103, 0x80);
+        expected.write_byte(0x104, 0xfa);
+        expected.write_byte(0x105, 0xa0);
+        expected.write_byte(0x106, 0x56);
+        expected.write_byte(0x107, 0x78);
+
+        let mut chunks = vec![
+            Chunk::new(String::from("|0100"), 0, 0),
+            Chunk::new(String::from("@bar"), 0, 6),
+            Chunk::new(String::from("#1234"), 0, 11),
+            Chunk::new(String::from(",bar"), 0, 17),
+            Chunk::new(String::from("#5678"), 0, 23),
+        ]
+        .into_iter();
+        let result = parse(&mut chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected);
+    }
+
+    #[test]
     fn rom() {
         let mut rom = Rom::new();
         rom.write_byte(0x100, 0x80);
