@@ -17,8 +17,8 @@ pub enum TokenType {
     LabelParent(String),
     LabelChild(String),
     Bracket,
-    AddressLiteralZeroPage(String),
-    AddressLiteralAbsolute(String),
+    AddressLiteralZeroPage(String, bool),
+    AddressLiteralAbsolute(String, bool),
 }
 
 impl TokenType {
@@ -127,19 +127,19 @@ impl TokenType {
             }
 
             "." => {
-                let name = &chunk.value[1..];
+                let (name, child) = parse_name(&chunk.value[1..]);
                 if name.is_empty() {
                     return Err("could not parse AddressLiteralZeroPage".to_string());
                 }
-                Some(TokenType::AddressLiteralZeroPage(name.to_string()))
+                Some(TokenType::AddressLiteralZeroPage(name.to_string(), child))
             }
 
             ";" => {
-                let name = &chunk.value[1..];
+                let (name, child) = parse_name(&chunk.value[1..]);
                 if name.is_empty() {
                     return Err("could not parse AddressLiteralAbsolute".to_string());
                 }
-                Some(TokenType::AddressLiteralAbsolute(name.to_string()))
+                Some(TokenType::AddressLiteralAbsolute(name.to_string(), child))
             }
 
             _ => None,
@@ -182,6 +182,16 @@ fn parse_short(s: &str) -> Result<u16, String> {
             }
             Err(_) => Err("Could not parse hex".to_string()),
         }
+    }
+}
+
+fn parse_name(s: &str) -> (&str, bool) {
+    if s.is_empty() {
+        ("", false)
+    } else if &s[0..1] == "&" {
+        (&s[1..], true)
+    } else {
+        (s, false)
     }
 }
 
@@ -322,27 +332,40 @@ mod tests {
     fn address_literal_zero_page_works() {
         assert_match!(
             ".Foo/bar",
-            TokenType::AddressLiteralZeroPage("Foo/bar".to_string())
+            TokenType::AddressLiteralZeroPage("Foo/bar".to_string(), false)
         );
-        assert_match!(".Foo", TokenType::AddressLiteralZeroPage("Foo".to_string()));
+        assert_match!(
+            ".Foo",
+            TokenType::AddressLiteralZeroPage("Foo".to_string(), false)
+        );
+        assert_match!(
+            ".&bar",
+            TokenType::AddressLiteralZeroPage("bar".to_string(), true)
+        );
     }
 
     #[test]
     fn address_literal_zero_page_fails() {
         assert_err!(".");
+        assert_err!(".&");
     }
 
     #[test]
     fn address_literal_absolute_works() {
         assert_match!(
             ";foo-bar",
-            TokenType::AddressLiteralAbsolute("foo-bar".to_string())
+            TokenType::AddressLiteralAbsolute("foo-bar".to_string(), false)
+        );
+        assert_match!(
+            ";&foo-bar",
+            TokenType::AddressLiteralAbsolute("foo-bar".to_string(), true)
         );
     }
 
     #[test]
     fn address_literal_absolute_fails() {
         assert_err!(";");
+        assert_err!(";&");
     }
 
     #[test]

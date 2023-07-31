@@ -185,18 +185,46 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, low);
                             position += 1;
                         }
-                        TokenType::AddressLiteralZeroPage(name) => {
+                        TokenType::AddressLiteralZeroPage(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Byte(position, name, chunk));
+                            fill_later.push(FillLater::Byte(position, full_name, chunk));
                             position += 1;
                         }
-                        TokenType::AddressLiteralAbsolute(name) => {
+                        TokenType::AddressLiteralAbsolute(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
                             rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Short(position, name, chunk));
+                            fill_later.push(FillLater::Short(position, full_name, chunk));
                             position += 2;
                         }
                         TokenType::LabelParent(name) => {
@@ -248,6 +276,9 @@ mod tests {
         expected.write_byte(0x105, 0x80);
         expected.write_byte(0x106, 0x00);
         expected.write_byte(0x107, 0x37);
+        expected.write_byte(0x108, 0x80);
+        expected.write_byte(0x109, 0x00);
+        expected.write_byte(0x10a, 0x37);
 
         let mut chunks = vec![
             Chunk::new(String::from("|00"), 0, 0),
@@ -261,6 +292,8 @@ mod tests {
             Chunk::new(String::from("DEO"), 1, 21),
             Chunk::new(String::from(".System/vector"), 2, 0),
             Chunk::new(String::from("DEO2"), 2, 15),
+            Chunk::new(String::from(".&vector"), 3, 0),
+            Chunk::new(String::from("DEO2"), 3, 15),
         ]
         .into_iter();
         let result = parse(&mut chunks);
