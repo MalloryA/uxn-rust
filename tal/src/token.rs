@@ -20,6 +20,7 @@ pub enum TokenType {
     AddressLiteralZeroPage(String, bool),
     AddressLiteralAbsolute(String, bool),
     ImmediateConditional(String, bool),
+    ImmediateUnconditional(String, bool),
     AddressLiteralRelative(String, bool),
     AddressRawAbsolute(String, bool),
 }
@@ -159,6 +160,14 @@ impl TokenType {
                     return Err("could not parse AddressRawAbsolute".to_string());
                 }
                 Some(TokenType::AddressRawAbsolute(name.to_string(), child))
+            }
+
+            "!" => {
+                let (name, child) = parse_name(&chunk.value[1..]);
+                if name.is_empty() {
+                    return Err("could not parse ImmediateUnconditional".to_string());
+                }
+                Some(TokenType::ImmediateUnconditional(name.to_string(), child))
             }
 
             "?" => {

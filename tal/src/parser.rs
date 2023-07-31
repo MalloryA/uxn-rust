@@ -267,6 +267,28 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             fill_later.push(FillLater::Short(position, full_name, chunk));
                             position += 2;
                         }
+                        TokenType::ImmediateUnconditional(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::JMI.as_byte());
+                            position += 1;
+
+                            // TODO: This should be relative, somehow
+                            fill_later.push(FillLater::Short(position, full_name, chunk));
+                            position += 2;
+                        }
                         TokenType::ImmediateConditional(name, child) => {
                             // TODO: DRY
                             let full_name = if child {
