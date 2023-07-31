@@ -14,8 +14,13 @@ fn split_short(short: u16) -> (u8, u8) {
 }
 
 enum FillLater {
-    Byte(u16, bool, String, Chunk),
-    Short(u16, bool, String, Chunk),
+    // u16: Address to fill in later
+    // bool: Relative?
+    // u16: subtract -> when using relative mode, subtract an extra value
+    // String: Name
+    // Chunk
+    Byte(u16, bool, u16, String, Chunk),
+    Short(u16, bool, u16, String, Chunk),
 }
 
 #[derive(PartialEq)]
@@ -106,7 +111,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                     // Fill in all the fill_laters
                     for fill in fill_later {
                         match fill {
-                            FillLater::Byte(target, relative, name, chunk) => {
+                            FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
                                 let source = address_references.get(&name);
                                 if source.is_none() {
                                     return Err(Error::new(
@@ -117,12 +122,13 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 let mut source = *source.unwrap();
                                 if relative {
                                     // Unclear why uxnasm wraps these
-                                    source = source.wrapping_sub(target).wrapping_sub(2);
+                                    source =
+                                        source.wrapping_sub(target).wrapping_sub(relative_subtract);
                                 }
                                 let (_high, low) = split_short(source);
                                 rom.write_byte(target, low);
                             }
-                            FillLater::Short(target, relative, name, chunk) => {
+                            FillLater::Short(target, relative, relative_subtract, name, chunk) => {
                                 let source = address_references.get(&name);
                                 if source.is_none() {
                                     return Err(Error::new(
@@ -132,7 +138,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 }
                                 let mut source = *source.unwrap();
                                 if relative {
-                                    source = source.wrapping_sub(target).wrapping_sub(2);
+                                    source =
+                                        source.wrapping_sub(target).wrapping_sub(relative_subtract);
                                 }
                                 let (high, low) = split_short(source);
                                 rom.write_byte(target, high);
@@ -210,7 +217,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Byte(position, false, full_name, chunk));
+                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
                             position += 1;
                         }
                         TokenType::AddressLiteralAbsolute(name, child) => {
@@ -231,7 +238,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Short(position, false, full_name, chunk));
+                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
                             position += 2;
                         }
                         TokenType::AddressLiteralRelative(name, child) => {
@@ -252,7 +259,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Byte(position, true, full_name, chunk));
+                            fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
                             position += 1;
                         }
                         TokenType::AddressRawAbsolute(name, child) => {
@@ -270,7 +277,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 name
                             };
 
-                            fill_later.push(FillLater::Short(position, false, full_name, chunk));
+                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
                             position += 2;
                         }
                         TokenType::ImmediateUnconditional(name, child) => {
@@ -291,7 +298,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::JMI.as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Short(position, true, full_name, chunk));
+                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
                             position += 2;
                         }
                         TokenType::ImmediateConditional(name, child) => {
@@ -312,7 +319,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             rom.write_byte(position, Opcode::JCI.as_byte());
                             position += 1;
 
-                            fill_later.push(FillLater::Short(position, true, full_name, chunk));
+                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
                             position += 2;
                         }
                         TokenType::LabelParent(name) => {
@@ -334,7 +341,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             // TODO: Assume instant (JSI)
                             rom.write_byte(position, Opcode::JSI.as_byte());
                             position += 1;
-                            fill_later.push(FillLater::Short(position, true, name, chunk));
+                            fill_later.push(FillLater::Short(position, true, 3, name, chunk));
                             position += 2;
                         }
                         TokenType::Bracket => {
