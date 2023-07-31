@@ -119,7 +119,17 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 rom.write_byte(target, low);
                             }
                             FillLater::Short(target, name, chunk) => {
-                                todo!();
+                                let source = address_references.get(&name);
+                                if source == None {
+                                    return Err(Error::new(
+                                        format!("unknown name \"{name}\""),
+                                        chunk,
+                                    ));
+                                }
+                                let source = source.unwrap();
+                                let (high, low) = split_short(*source);
+                                rom.write_byte(target, high);
+                                rom.write_byte(target + 1, low);
                             }
                         }
                     }
@@ -197,8 +207,11 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 ));
                             }
                         }
-                        TokenType::MacroOrAddress(name) => {
-                            // TODO
+                        TokenType::MacroOrInstant(name) => {
+                            // TODO: Assume instant (JSI)
+                            rom.write_byte(position, Opcode::JSI.as_byte());
+                            position += 1;
+                            fill_later.push(FillLater::Short(position, name, chunk));
                             position += 2;
                         }
                         TokenType::Bracket => {

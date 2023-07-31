@@ -3,7 +3,7 @@ use crate::opcode::Opcode;
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
-    MacroOrAddress(String),
+    MacroOrInstant(String),
     Opcode(Opcode),
     RawByte(u8),
     RawShort(u16),
@@ -141,7 +141,7 @@ impl TokenType {
 
         // Default assumption
 
-        Ok(TokenType::MacroOrAddress(chunk.value.clone()))
+        Ok(TokenType::MacroOrInstant(chunk.value.clone()))
     }
 }
 
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_match!("cat", TokenType::MacroOrAddress(String::from("cat")));
+        assert_match!("cat", TokenType::MacroOrInstant(String::from("cat")));
         assert_match!("DUP", TokenType::Opcode(Opcode::DUP(false, false, false)));
         assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
         assert_match!("12", TokenType::RawByte(0x12));
@@ -288,7 +288,7 @@ mod tests {
         let result = Token::from_chunk(chunk);
         assert_eq!(
             result.unwrap().token_type,
-            TokenType::MacroOrAddress("A".to_string())
+            TokenType::MacroOrInstant("A".to_string())
         );
     }
 
@@ -305,7 +305,7 @@ mod tests {
         let result = Token::from_chunk(chunk);
         assert_eq!(
             result.unwrap().token_type,
-            TokenType::MacroOrAddress("ABC".to_string())
+            TokenType::MacroOrInstant("ABC".to_string())
         );
     }
 
