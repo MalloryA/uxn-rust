@@ -21,6 +21,7 @@ pub enum TokenType {
     AddressLiteralAbsolute(String, bool),
     ImmediateConditional(String, bool),
     AddressLiteralRelative(String, bool),
+    AddressRawAbsolute(String, bool),
 }
 
 impl TokenType {
@@ -150,6 +151,14 @@ impl TokenType {
                     return Err("could not parse AddressLiteralRelative".to_string());
                 }
                 Some(TokenType::AddressLiteralRelative(name.to_string(), child))
+            }
+
+            "-" => {
+                let (name, child) = parse_name(&chunk.value[1..]);
+                if name.is_empty() {
+                    return Err("could not parse AddressRawAbsolute".to_string());
+                }
+                Some(TokenType::AddressRawAbsolute(name.to_string(), child))
             }
 
             "?" => {
