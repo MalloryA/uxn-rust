@@ -37,8 +37,6 @@ impl Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
-    use std::io::BufReader;
     use std::io::Cursor;
 
     #[test]

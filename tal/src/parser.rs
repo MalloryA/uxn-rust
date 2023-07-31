@@ -25,7 +25,7 @@ pub struct Rom {
 
 impl Debug for Rom {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        for (i, byte) in self.get_bytes().into_iter().enumerate() {
+        for (i, byte) in self.get_bytes().iter().enumerate() {
             if i != 0 {
                 if i % 16 == 0 {
                     f.write_str("\n")?;
@@ -108,7 +108,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                         match fill {
                             FillLater::Byte(target, relative, name, chunk) => {
                                 let source = address_references.get(&name);
-                                if source == None {
+                                if source.is_none() {
                                     return Err(Error::new(
                                         format!("unknown name \"{name}\""),
                                         chunk,
@@ -124,7 +124,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             }
                             FillLater::Short(target, relative, name, chunk) => {
                                 let source = address_references.get(&name);
-                                if source == None {
+                                if source.is_none() {
                                     return Err(Error::new(
                                         format!("unknown name \"{name}\""),
                                         chunk,
@@ -351,7 +351,6 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn it_works() {
