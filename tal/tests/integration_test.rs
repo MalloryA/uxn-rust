@@ -115,11 +115,13 @@ fn expect_eq_files(left: PathBuf, right: PathBuf) -> Result<(), String> {
     expect_eq_rom(_left, _right)
 }
 
+fn relative(root: &PathBuf, file: &PathBuf) -> String {
+    let len = root.display().to_string().len() + 1;
+    (&file.display().to_string()[len..]).to_string()
+}
+
 fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Result<(), String> {
-    let cwd_len = cwd.display().to_string().len() + 1;
-    let tal_path = &tal.display().to_string()[cwd_len..];
-    let rom_path = &rom.display().to_string()[cwd_len..];
-    println!("tal {} {}", tal_path, rom_path);
+    println!("tal {} {}", relative(&cwd, &tal), relative(&cwd, &rom));
     let tmp = temp_dir().join("tal-test.rom");
 
     let result = Command::new(root_dir().join("target/debug/tal"))
@@ -169,8 +171,25 @@ fn it_works() {
     let path = root_dir().join("tal/tests/roms");
     let roms = find_all_rom_files(&path);
 
+    let mut results = vec![];
+
     for rom_path in roms {
+        let relative_path = relative(&path, &rom_path);
         let tal_path = rom_path.with_extension("tal");
-        expect_successful_assembly(&path, tal_path, rom_path).unwrap();
+        let result = expect_successful_assembly(&path, tal_path, rom_path.clone());
+        results.push((relative_path, result));
+    }
+
+    let mut fail = false;
+    for result in results {
+        if result.1.is_ok() {
+            println!("SUCCESS {}", result.0);
+        } else {
+            fail = true;
+            println!("FAIL    {} - {}", result.0, result.1.unwrap_err());
+        }
+    }
+    if fail {
+        panic!("1 or more tests failed");
     }
 }
