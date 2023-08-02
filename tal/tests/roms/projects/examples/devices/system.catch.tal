@@ -1,0 +1,104 @@
+( usage: uxncli system.catch.rom )
+
+|00 @System &catch $2 &expansion $2 &pad $2 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &halt $1
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+
+|0100
+
+@on-reset ( -> )
+	;on-error .System/catch DEO2
+	;on-console .Console/vector DEO2
+	;dict/instruction <print-str>
+	BRK
+
+@on-console ( -> )
+	[ LIT2 &id =tests ] INC2k INC2 ,&id STR2
+	LDA2 JSR2 BRK
+
+@on-error ( addr* inst code -> )
+	#00 SWP DUP ADD ;err ADD2 LDA2 <print-str>
+	;dict/error <print-str>
+	<print-opcode>
+	;dict/at <print-str>
+	<print-hex>
+	LIT ". #18 DEO
+	BRK
+
+@try-divzero ( -- )
+	#02 #00 DIV JMP2r
+
+@try-underflow ( -- )
+	POP2 JMP2r
+
+@try-overflow ( -- )
+	#00
+	&l ( -- )
+		#ffff ROT INC DUP ?&l
+	POP JMP2r
+
+@exit ( -> )
+	#0000 .Console/vector DEO2
+	#800f DEO
+	BRK
+
+@<print-opcode> ( byte -- )
+	DUP #20 EQU ?&jci
+	DUP #40 EQU ?&jmi
+	DUP #60 EQU ?&jsi
+	DUP #00 EQU ?&brk
+	#00 OVR #1f AND #20 SFT2 ;opcodes ADD2 <print-str>
+	DUP #20 AND #00 EQU ?&>no-2
+		LIT "2 #18 DEO &>no-2
+	DUP #1f AND #00 EQU ?&>no-k
+	DUP #80 AND #00 EQU ?&>no-k
+		LIT "k #18 DEO &>no-k
+	DUP #40 AND #00 EQU ?&>no-r
+		LIT "r #18 DEO &>no-r
+	POP JMP2r
+	&brk POP ;opcodes/brk !<print-str>
+	&jmi POP ;opcodes/jmi !<print-str>
+	&jci POP ;opcodes/jci !<print-str>
+	&jsi POP ;opcodes/jsi !<print-str>
+
+@<print-hex> ( short* -- )
+	SWP <print-hex>/b
+	&b ( byte -- )
+		DUP #04 SFT <print-hex>/c
+	&c ( char -- )
+		#0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+		JMP2r
+
+@<print-str> ( str* -- )
+	&w ( -- )
+		LDAk #18 DEO
+		INC2 LDAk ?&w
+	POP2 JMP2r
+
+@tests
+	=try-divzero =try-underflow =try-overflow =exit
+
+@err
+	=dict/unknown =dict/underflow =dict/overflow =dict/divzero
+
+@dict ( )
+	&error "error, 20 "during 20 $1
+	&unknown "Unkown 20 $1
+	&underflow "Underflow 20 $1
+	&overflow "Overflow 20 $1
+	&divzero "Division 20 "by 20 "zero 20 $1
+	&at ", 20 "at 20 "# $1
+	&instruction "Press 20 "enter 20 "to 20 "test 20 "each 20 "error. 0a $1
+
+@opcodes
+	[
+	"LIT $1 "INC $1 "POP $1 "NIP $1
+	"SWP $1 "ROT $1 "DUP $1 "OVR $1
+	"EQU $1 "NEQ $1 "GTH $1 "LTH $1
+	"JMP $1 "JCN $1 "JSR $1 "STH $1
+	"LDZ $1 "STZ $1 "LDR $1 "STR $1
+	"LDA $1 "STA $1 "DEI $1 "DEO $1
+	"ADD $1 "SUB $1 "MUL $1 "DIV $1
+	"AND $1 "ORA $1 "EOR $1 "SFT $1
+	&brk "BRK $1 &jmi "JMI $1 &jci "JCI
+	$1 &jsi "JSI $1 ]
+

@@ -1,0 +1,36 @@
+( FizzBuzz: From 1 to 100, for multiples of 3 print "Fizz", of 5 "Buzz" and for both "FizzBuzz" )
+
+|0100
+
+@on-reset ( -> )
+	#6400
+	&loop ( integer )
+		DUP print-dec #2018 DEO
+		DUP #03 mod ?&>no-3
+			;dict/fizz print-str &>no-3
+		DUP #05 mod ?&>no-5
+			;dict/buzz print-str &>no-5
+		#0a18 DEO
+		INC GTHk ?&loop
+	POP2
+	( halt ) #010f DEO
+	BRK
+
+@mod ( a b -- c )
+	DIVk MUL SUB JMP2r
+
+@print-dec ( num -- )
+	( x0 ) DUP #0a DIV print-dec/num
+	( 0x ) #0a DIVk MUL SUB &num #30 ADD #18 DEO
+	JMP2r
+
+@print-str ( addr* -- )
+	&while ( -- )
+		LDAk #18 DEO
+		INC2 LDAk ?&while
+	POP2 JMP2r
+
+@dict ( strings )
+	&fizz "Fizz $1
+	&buzz "Buzz $1
+

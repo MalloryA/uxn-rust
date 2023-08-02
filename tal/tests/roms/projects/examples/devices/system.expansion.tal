@@ -1,0 +1,26 @@
+( usage: uxncli system.expansion.rom )
+
+|00 @System &catch $2 &expansion $2 &pad $2 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &halt $1
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+
+|0100
+
+@on-reset ( -> )
+	;cmd .System/expansion DEO2
+	;dst <print-str>
+	BRK
+
+@cmd
+	[ 01 000c 0000 =src 0000 =dst ]
+
+@src
+	"Hello 20 "World $1
+
+@dst $c
+
+@<print-str> ( str* -- )
+	&w ( -- )
+		LDAk #18 DEO
+		INC2 LDAk ?&w
+	POP2 JMP2r
+

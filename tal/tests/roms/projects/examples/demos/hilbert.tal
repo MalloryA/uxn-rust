@@ -1,0 +1,107 @@
+|00 @System &vector $2 &wst $1 &rst $1 &eaddr $2 &ecode $1 &pad $1 &r $2 &g $2 &b $2 &debug $1 &halt $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+
+|00
+
+	@line &x2 $2 &y2 $2
+
+|0100
+
+	#6f0b .System/r DEO2
+	#7f0a .System/g DEO2
+	#8e0a .System/b DEO2
+	( screen size )
+	#00c0
+		DUP2 .Screen/width DEO2
+		.Screen/height DEO2
+	( vector )
+	;on-frame .Screen/vector DEO2
+
+BRK
+
+@on-frame ( -> )
+
+	[ LIT2 &f $2 ] INC2k ,&f STR2
+		INC2k d2xy ROT2 d2xy #01 draw-line
+
+BRK
+
+@d2xy ( d* -- x* y* )
+
+	,&t STR2
+	#0000
+		DUP2 ,&x STR2
+		,&y STR2
+	#2001
+	&l
+		#00 OVR STH2
+		[ LIT2 &t $2 ]
+			DUP2 DUP2 #01 SFT2 #0001 AND2 DUP2 ,&rx STR2
+			EOR2 #0001 AND2 ,&ry STR2
+			#02 SFT2 ,&t STR2
+		[ LIT2 &x $2 ] [ LIT2 &y $2 ] [ LIT2 &rx $2 ] [ LIT2 &ry $2 ]
+			STH2kr rot
+		STH2kr ,&ry LDR2 MUL2 ADD2 ,&y STR2
+		STH2r ,&rx LDR2 MUL2 ADD2 ,&x STR2
+		DUP ADD GTHk ?&l
+	POP2
+	,&x LDR2 #20 SFT2 #0020 ADD2
+	,&y LDR2 #20 SFT2 #0020 ADD2
+
+JMP2r
+
+@rot ( x* y* rx* ry* n* -- x* y* )
+
+	#0001 SUB2 STH2
+	SWP2 ,&rx STR2
+	ORA ?&skipy
+		[ LIT2 &rx $2 ] #0001 NEQ2 ?&skipx
+			( rx-n-1 ) SWP2 STH2kr SWP2 SUB2
+			( ry-n-1 ) SWP2 STH2kr SWP2 SUB2
+			&skipx
+		( swap ) SWP2
+	&skipy
+	POP2r
+
+JMP2r
+
+@draw-line ( x1* y1* x2* y2* color -- )
+
+	( load )
+	,&color STR
+	,&y STR2
+	,&x STR2
+	.line/y2 STZ2
+	.line/x2 STZ2
+
+	,&x LDR2 .line/x2 LDZ2 SUB2 abs2 ,&dx STR2
+	#0000 ,&y LDR2 .line/y2 LDZ2 SUB2 abs2 SUB2 ,&dy STR2
+
+	#ffff #00 .line/x2 LDZ2 ,&x LDR2 lts2 DUP2 ADD2 ADD2 ,&sx STR2
+	#ffff #00 .line/y2 LDZ2 ,&y LDR2 lts2 DUP2 ADD2 ADD2 ,&sy STR2
+
+	[ LIT2 &dx $2 ] [ LIT2 &dy $2 ] ADD2 ,&e1 STR2
+
+	&loop
+		.line/x2 LDZ2 DUP2 .Screen/x DEO2 [ LIT2 &x $2 ] EQU2
+		.line/y2 LDZ2 DUP2 .Screen/y DEO2 [ LIT2 &y $2 ] EQU2
+			[ LIT2 &color $1 -Screen/pixel ] DEO
+			AND ?&end
+		[ LIT2 &e1 $2 ] DUP2 ADD2 DUP2
+		,&dy LDR2 lts2 ?&skipy
+			,&e1 LDR2 ,&dy LDR2 ADD2 ,&e1 STR2
+			.line/x2 LDZ2 [ LIT2 &sx $2 ] ADD2 .line/x2 STZ2
+		&skipy
+		,&dx LDR2 gts2 ?&skipx
+			,&e1 LDR2 ,&dx LDR2 ADD2 ,&e1 STR2
+			.line/y2 LDZ2 [ LIT2 &sy $2 ] ADD2 .line/y2 STZ2
+		&skipx
+		!&loop
+	&end
+
+JMP2r
+
+@abs2 DUP2 #0f SFT2 EQU #05 JCN #0000 SWP2 SUB2 JMP2r
+@lts2 #8000 STH2k ADD2 SWP2 STH2r ADD2 GTH2 JMP2r
+@gts2 #8000 STH2k ADD2 SWP2 STH2r ADD2 LTH2 JMP2r
+
