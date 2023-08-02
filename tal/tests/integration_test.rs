@@ -119,17 +119,34 @@ fn root_dir() -> PathBuf {
         .to_path_buf()
 }
 
+fn find_all_rom_files(path: PathBuf) -> Vec<PathBuf> {
+    let mut directories = vec![path];
+    let mut files = vec![];
+
+    while !directories.is_empty() {
+        let dir_path = directories.pop().unwrap();
+
+        let dir = read_dir(dir_path).unwrap();
+        for result in dir {
+            let file = result.unwrap();
+            if file.metadata().unwrap().is_dir() {
+                directories.push(file.path());
+            } else if file.path().extension().unwrap().to_str().unwrap() == "rom" {
+                files.push(file.path());
+            }
+        }
+    }
+
+    files
+}
+
 #[test]
 fn it_works() {
     let path = root_dir().join("tal/tests/roms");
-    let dir = read_dir(path).unwrap();
-    for result in dir {
-        let file = result.unwrap();
-        let path = file.path();
-        if path.extension().unwrap().to_str().unwrap() != "tal" {
-            continue;
-        }
-        let rom = path.with_extension("rom");
-        test_file(path, rom);
+    let roms = find_all_rom_files(path);
+
+    for rom_path in roms {
+        let tal_path = rom_path.with_extension("tal");
+        test_file(tal_path, rom_path);
     }
 }
