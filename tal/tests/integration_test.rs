@@ -180,6 +180,9 @@ fn it_works() {
         results.push((relative_path, result));
     }
 
+    let succeeded = results.iter().filter(|r| r.1.is_ok()).count();
+    let total = results.len();
+
     let mut fail = false;
     for result in results {
         if result.1.is_ok() {
@@ -189,6 +192,7 @@ fn it_works() {
             println!("FAIL    {} - {}", result.0, result.1.unwrap_err());
         }
     }
+    println!("{succeeded}/{total} succeeded");
     if fail {
         panic!("1 or more tests failed");
     }
