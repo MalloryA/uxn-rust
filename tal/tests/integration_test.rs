@@ -95,13 +95,17 @@ fn assert_eq_files(left: PathBuf, right: PathBuf) {
     assert_eq_rom(_left, _right);
 }
 
-fn test_file(tal: PathBuf, rom: PathBuf) {
-    println!("{:?} -> {:?}", tal, rom);
+fn test_file(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) {
+    let cwd_len = cwd.display().to_string().len() + 1;
+    let tal_path = &tal.display().to_string()[cwd_len..];
+    let rom_path = &rom.display().to_string()[cwd_len..];
+    println!("tal {} {}", tal_path, rom_path);
     let tmp = temp_dir().join("tal-test.rom");
 
     let result = Command::new(root_dir().join("target/debug/tal"))
         .arg(tal)
         .arg(tmp.clone())
+        .current_dir(cwd)
         .status();
     assert!(result.is_ok());
     let status = result.unwrap();
@@ -119,8 +123,8 @@ fn root_dir() -> PathBuf {
         .to_path_buf()
 }
 
-fn find_all_rom_files(path: PathBuf) -> Vec<PathBuf> {
-    let mut directories = vec![path];
+fn find_all_rom_files(path: &PathBuf) -> Vec<PathBuf> {
+    let mut directories = vec![path.clone()];
     let mut files = vec![];
 
     while !directories.is_empty() {
@@ -143,10 +147,10 @@ fn find_all_rom_files(path: PathBuf) -> Vec<PathBuf> {
 #[test]
 fn it_works() {
     let path = root_dir().join("tal/tests/roms");
-    let roms = find_all_rom_files(path);
+    let roms = find_all_rom_files(&path);
 
     for rom_path in roms {
         let tal_path = rom_path.with_extension("tal");
-        test_file(tal_path, rom_path);
+        test_file(&path, tal_path, rom_path);
     }
 }
