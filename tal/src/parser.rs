@@ -73,7 +73,7 @@ impl Rom {
 
 pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
     let mut comment_start: Option<Chunk> = None;
-    let mut position: u16 = 0;
+    let mut position: u16 = 0x100;
 
     // Addresses, references, etc
 
