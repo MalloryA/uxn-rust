@@ -277,8 +277,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                                 name
                             };
 
-                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
-                            position += 2;
+                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                            position += 1;
                         }
                         TokenType::ImmediateUnconditional(name, child) => {
                             // TODO: DRY
