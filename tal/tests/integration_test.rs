@@ -59,7 +59,26 @@ impl Debug for Rom {
     }
 }
 
-fn assert_eq_rom(left: Rom, right: Rom) {
+fn expect(value: bool, message: String) -> Result<(), String> {
+    if value {
+        Ok(())
+    } else {
+        Err(format!("Expected {:?} to be true - {}", value, message))
+    }
+}
+
+fn expect_eq(left: String, right: String, message: String) -> Result<(), String> {
+    if left == right {
+        Ok(())
+    } else {
+        Err(format!(
+            "Expected {:?} to equal {:?} - {}",
+            left, right, message
+        ))
+    }
+}
+
+fn expect_eq_rom(left: Rom, right: Rom) -> Result<(), String> {
     let left = format!("{:?}", left);
     let mut left = left.lines();
     let right = format!("{:?}", right);
@@ -76,14 +95,15 @@ fn assert_eq_rom(left: Rom, right: Rom) {
                 break;
             }
             (Some(l), Some(r)) => {
-                assert_eq!(l, r, "failed at line {i}");
+                expect_eq(l.to_string(), r.to_string(), format!("failed at line {i}"))?;
             }
             _ => todo!(),
         }
     }
+    Ok(())
 }
 
-fn assert_eq_files(left: PathBuf, right: PathBuf) {
+fn expect_eq_files(left: PathBuf, right: PathBuf) -> Result<(), String> {
     let _left = Rom::from_file(left.clone());
     assert!(_left.is_ok(), "{left:?} should be OK");
     let _left = _left.unwrap();
@@ -92,10 +112,10 @@ fn assert_eq_files(left: PathBuf, right: PathBuf) {
     assert!(_right.is_ok(), "{right:?} should be OK");
     let _right = _right.unwrap();
 
-    assert_eq_rom(_left, _right);
+    expect_eq_rom(_left, _right)
 }
 
-fn test_file(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) {
+fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Result<(), String> {
     let cwd_len = cwd.display().to_string().len() + 1;
     let tal_path = &tal.display().to_string()[cwd_len..];
     let rom_path = &rom.display().to_string()[cwd_len..];
@@ -107,11 +127,11 @@ fn test_file(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) {
         .arg(tmp.clone())
         .current_dir(cwd)
         .status();
-    assert!(result.is_ok());
+    expect(result.is_ok(), format!("Command failed"))?;
     let status = result.unwrap();
-    assert!(status.success(), "exit code: {:?}", status.code());
+    expect(status.success(), format!("exit code: {:?}", status.code()))?;
 
-    assert_eq_files(tmp, rom);
+    expect_eq_files(tmp, rom)
 }
 
 fn root_dir() -> PathBuf {
@@ -151,6 +171,6 @@ fn it_works() {
 
     for rom_path in roms {
         let tal_path = rom_path.with_extension("tal");
-        test_file(&path, tal_path, rom_path);
+        expect_successful_assembly(&path, tal_path, rom_path).unwrap();
     }
 }
