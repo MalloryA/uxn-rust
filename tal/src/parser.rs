@@ -90,6 +90,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
         let next = chunks.next();
 
         if comment_start.is_some() {
+            // If we're in a comment, only respond to a CommentEnd token
             match next {
                 None => {
                     return Err(Error::new(
@@ -97,13 +98,12 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                         comment_start.unwrap(),
                     ))
                 }
-                Some(chunk) => match Token::from_chunk(chunk.clone()) {
-                    Err(err) => return Err(Error::new(err, chunk)),
-                    Ok(token) => match token.token_type {
-                        TokenType::CommentEnd => comment_start = None,
-                        _ => continue,
-                    },
-                },
+                Some(chunk) => {
+                    let result = Token::from_chunk(chunk.clone());
+                    if result.is_ok() && result.unwrap().token_type == TokenType::CommentEnd {
+                        comment_start = None;
+                    }
+                }
             }
         } else {
             match next {
@@ -440,6 +440,27 @@ mod tests {
             Chunk::new(String::from("#1234"), 0, 11),
             Chunk::new(String::from(",bar"), 0, 17),
             Chunk::new(String::from("#5678"), 0, 23),
+        ]
+        .into_iter();
+        let result = parse(&mut chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected);
+    }
+
+    #[test]
+    fn comments_work() {
+        let mut expected = Rom::new();
+        expected.write_byte(0x100, 0xa0);
+        expected.write_byte(0x101, 0x12);
+        expected.write_byte(0x102, 0x34);
+
+        let mut chunks = vec![
+            Chunk::new(String::from("|0100"), 0, 0),
+            Chunk::new(String::from("("), 0, 6),
+            Chunk::new(String::from("#"), 0, 8),
+            Chunk::new(String::from(")"), 0, 10),
+            Chunk::new(String::from("#1234"), 0, 12),
         ]
         .into_iter();
         let result = parse(&mut chunks);
