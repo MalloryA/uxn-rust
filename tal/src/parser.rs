@@ -341,7 +341,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Chunk>) -> Result<Rom, Error> {
                             // TODO: Assume instant (JSI)
                             rom.write_byte(position, Opcode::JSI.as_byte());
                             position += 1;
-                            fill_later.push(FillLater::Short(position, true, 3, name, chunk));
+                            fill_later.push(FillLater::Short(position, true, 2, name, chunk));
                             position += 2;
                         }
                         TokenType::Bracket => {
