@@ -2,6 +2,7 @@ mod chunker;
 mod error;
 mod opcode;
 mod parser;
+mod pre_process_comments;
 mod token;
 
 use crate::chunker::Chunker;

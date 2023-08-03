@@ -1,7 +1,7 @@
 use crate::chunker::Chunk;
 use std::io::BufRead;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Error {
     message: String,
     chunk: Chunk,
