@@ -469,6 +469,32 @@ mod tests {
         assert_eq!(rom, expected);
     }
 
+    // TODO: Re-enable this when we support macros
+    // #[test]
+    fn macros_work() {
+        let mut expected = Rom::new();
+        expected.write_byte(0x100, 0xa0);
+        expected.write_byte(0x101, 0x12);
+        expected.write_byte(0x102, 0x34);
+        expected.write_byte(0x102, 0x80);
+        expected.write_byte(0x102, 0x17);
+
+        let mut chunks = vec![
+            Chunk::new(String::from("%EMIT"), 0, 0),
+            Chunk::new(String::from("{"), 0, 6),
+            Chunk::new(String::from("#18"), 0, 8),
+            Chunk::new(String::from("DEO"), 0, 12),
+            Chunk::new(String::from("}"), 0, 15),
+            Chunk::new(String::from("#1234"), 0, 17),
+            Chunk::new(String::from("EMIT"), 0, 23),
+        ]
+        .into_iter();
+        let result = parse(&mut chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected);
+    }
+
     #[test]
     fn rom() {
         let mut rom = Rom::new();

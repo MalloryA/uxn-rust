@@ -23,6 +23,7 @@ pub enum TokenType {
     ImmediateUnconditional(String, bool),
     AddressLiteralRelative(String, bool),
     AddressRawAbsolute(String, bool),
+    MacroDefinition(String),
 }
 
 impl TokenType {
@@ -176,6 +177,14 @@ impl TokenType {
                     return Err("could not parse ImmediateConditional".to_string());
                 }
                 Some(TokenType::ImmediateConditional(name.to_string(), child))
+            }
+
+            "%" => {
+                let name = &chunk.value[1..];
+                if name.is_empty() {
+                    return Err("could not parse MacroDefinition".to_string());
+                }
+                Some(TokenType::MacroDefinition(name.to_string()))
             }
 
             _ => None,
@@ -407,5 +416,15 @@ mod tests {
     #[test]
     fn opcode_takes_precidence_over_raw_short() {
         assert_match!("ADD2", TokenType::Opcode(Opcode::ADD(true, false, false)));
+    }
+
+    #[test]
+    fn macro_definition_works() {
+        assert_match!("%EMIT", TokenType::MacroDefinition("EMIT".to_string()));
+    }
+
+    #[test]
+    fn macro_definition_fails() {
+        assert_err!("%");
     }
 }
