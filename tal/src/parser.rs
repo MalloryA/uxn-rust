@@ -1,5 +1,4 @@
 use crate::chunker::Chunk;
-use crate::chunker::ChunkResulter;
 use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::pre_process_comments::PreProcessComments;
@@ -352,23 +351,22 @@ mod tests {
         expected.write_byte(0x10a, 0x37);
 
         let mut chunks = vec![
-            Chunk::new(String::from("|00"), 0, 0),
-            Chunk::new(String::from("@System"), 0, 4),
-            Chunk::new(String::from("&vector"), 0, 12),
-            Chunk::new(String::from("|0100"), 1, 0),
-            Chunk::new(String::from("LIT"), 1, 7),
-            Chunk::new(String::from("68"), 1, 11),
-            Chunk::new(String::from("LIT"), 1, 14),
-            Chunk::new(String::from("18"), 1, 18),
-            Chunk::new(String::from("DEO"), 1, 21),
-            Chunk::new(String::from(".System/vector"), 2, 0),
-            Chunk::new(String::from("DEO2"), 2, 15),
-            Chunk::new(String::from(".&vector"), 3, 0),
-            Chunk::new(String::from("DEO2"), 3, 15),
+            Ok(Chunk::new(String::from("|00"), 0, 0)),
+            Ok(Chunk::new(String::from("@System"), 0, 4)),
+            Ok(Chunk::new(String::from("&vector"), 0, 12)),
+            Ok(Chunk::new(String::from("|0100"), 1, 0)),
+            Ok(Chunk::new(String::from("LIT"), 1, 7)),
+            Ok(Chunk::new(String::from("68"), 1, 11)),
+            Ok(Chunk::new(String::from("LIT"), 1, 14)),
+            Ok(Chunk::new(String::from("18"), 1, 18)),
+            Ok(Chunk::new(String::from("DEO"), 1, 21)),
+            Ok(Chunk::new(String::from(".System/vector"), 2, 0)),
+            Ok(Chunk::new(String::from("DEO2"), 2, 15)),
+            Ok(Chunk::new(String::from(".&vector"), 3, 0)),
+            Ok(Chunk::new(String::from("DEO2"), 3, 15)),
         ]
         .into_iter();
-        let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunks);
         let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
@@ -388,15 +386,14 @@ mod tests {
         expected.write_byte(0x107, 0x78);
 
         let mut chunks = vec![
-            Chunk::new(String::from("|0100"), 0, 0),
-            Chunk::new(String::from(",foo"), 0, 6),
-            Chunk::new(String::from("#1234"), 0, 11),
-            Chunk::new(String::from("@foo"), 0, 17),
-            Chunk::new(String::from("#5678"), 0, 23),
+            Ok(Chunk::new(String::from("|0100"), 0, 0)),
+            Ok(Chunk::new(String::from(",foo"), 0, 6)),
+            Ok(Chunk::new(String::from("#1234"), 0, 11)),
+            Ok(Chunk::new(String::from("@foo"), 0, 17)),
+            Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunks);
         let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
@@ -416,15 +413,14 @@ mod tests {
         expected.write_byte(0x107, 0x78);
 
         let mut chunks = vec![
-            Chunk::new(String::from("|0100"), 0, 0),
-            Chunk::new(String::from("@bar"), 0, 6),
-            Chunk::new(String::from("#1234"), 0, 11),
-            Chunk::new(String::from(",bar"), 0, 17),
-            Chunk::new(String::from("#5678"), 0, 23),
+            Ok(Chunk::new(String::from("|0100"), 0, 0)),
+            Ok(Chunk::new(String::from("@bar"), 0, 6)),
+            Ok(Chunk::new(String::from("#1234"), 0, 11)),
+            Ok(Chunk::new(String::from(",bar"), 0, 17)),
+            Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunks);
         let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
@@ -439,15 +435,14 @@ mod tests {
         expected.write_byte(0x102, 0x34);
 
         let mut chunks = vec![
-            Chunk::new(String::from("|0100"), 0, 0),
-            Chunk::new(String::from("("), 0, 6),
-            Chunk::new(String::from("#"), 0, 8),
-            Chunk::new(String::from(")"), 0, 10),
-            Chunk::new(String::from("#1234"), 0, 12),
+            Ok(Chunk::new(String::from("|0100"), 0, 0)),
+            Ok(Chunk::new(String::from("("), 0, 6)),
+            Ok(Chunk::new(String::from("#"), 0, 8)),
+            Ok(Chunk::new(String::from(")"), 0, 10)),
+            Ok(Chunk::new(String::from("#1234"), 0, 12)),
         ]
         .into_iter();
-        let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunks);
         let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
@@ -465,17 +460,16 @@ mod tests {
         expected.write_byte(0x102, 0x17);
 
         let mut chunks = vec![
-            Chunk::new(String::from("%EMIT"), 0, 0),
-            Chunk::new(String::from("{"), 0, 6),
-            Chunk::new(String::from("#18"), 0, 8),
-            Chunk::new(String::from("DEO"), 0, 12),
-            Chunk::new(String::from("}"), 0, 15),
-            Chunk::new(String::from("#1234"), 0, 17),
-            Chunk::new(String::from("EMIT"), 0, 23),
+            Ok(Chunk::new(String::from("%EMIT"), 0, 0)),
+            Ok(Chunk::new(String::from("{"), 0, 6)),
+            Ok(Chunk::new(String::from("#18"), 0, 8)),
+            Ok(Chunk::new(String::from("DEO"), 0, 12)),
+            Ok(Chunk::new(String::from("}"), 0, 15)),
+            Ok(Chunk::new(String::from("#1234"), 0, 17)),
+            Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunks);
         let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();

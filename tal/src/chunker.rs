@@ -41,7 +41,7 @@ fn is_whitespace(byte: u8) -> bool {
 }
 
 impl Iterator for Chunker<'_> {
-    type Item = Chunk;
+    type Item = Result<Chunk, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut s: Vec<u8> = vec![];
@@ -56,7 +56,7 @@ impl Iterator for Chunker<'_> {
                     if !s.is_empty() {
                         match String::from_utf8(s) {
                             Ok(string) => {
-                                return Some(Chunk::new(string, self.line, column));
+                                return Some(Ok(Chunk::new(string, self.line, column)));
                             }
                             Err(_) => {
                                 return None;
@@ -70,7 +70,7 @@ impl Iterator for Chunker<'_> {
                         match String::from_utf8(s) {
                             Ok(string) => {
                                 self.column += 1;
-                                let value = Some(Chunk::new(string, self.line, column));
+                                let value = Some(Ok(Chunk::new(string, self.line, column)));
                                 if byte == b'\n' {
                                     self.line += 1;
                                     self.column = 0;
@@ -98,34 +98,6 @@ impl Iterator for Chunker<'_> {
     }
 }
 
-// In: Iterator<Item=Chunk>
-// Out: Iterator<Item=Result<Chunk,Error>>
-// All Results are always Ok
-pub struct ChunkResulter<'a> {
-    chunks: &'a mut dyn Iterator<Item = Chunk>,
-    comment_start: Option<Chunk>,
-}
-
-impl ChunkResulter<'_> {
-    pub fn new(chunks: &mut dyn Iterator<Item = Chunk>) -> ChunkResulter {
-        ChunkResulter {
-            chunks,
-            comment_start: None,
-        }
-    }
-}
-
-impl Iterator for ChunkResulter<'_> {
-    type Item = Result<Chunk, Error>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.chunks.next() {
-            Some(chunk) => Some(Ok(chunk)),
-            None => None,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,12 +108,21 @@ mod tests {
         let mut buffer = Cursor::new("cat\ndog\trat possum");
         let mut breaker = Chunker::new(&mut buffer);
 
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("cat"), 0, 0)));
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("dog"), 1, 0)));
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("rat"), 1, 4)));
         assert_eq!(
             breaker.next(),
-            Some(Chunk::new(String::from("possum"), 1, 8))
+            Some(Ok(Chunk::new(String::from("cat"), 0, 0)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("dog"), 1, 0)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("rat"), 1, 4)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("possum"), 1, 8)))
         );
         assert_eq!(breaker.next(), None);
     }
@@ -151,27 +132,22 @@ mod tests {
         let mut buffer = Cursor::new("cat\n\ndog\trat possum");
         let mut breaker = Chunker::new(&mut buffer);
 
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("cat"), 0, 0)));
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("dog"), 2, 0)));
-        assert_eq!(breaker.next(), Some(Chunk::new(String::from("rat"), 2, 4)));
         assert_eq!(
             breaker.next(),
-            Some(Chunk::new(String::from("possum"), 2, 8))
+            Some(Ok(Chunk::new(String::from("cat"), 0, 0)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("dog"), 2, 0)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("rat"), 2, 4)))
+        );
+        assert_eq!(
+            breaker.next(),
+            Some(Ok(Chunk::new(String::from("possum"), 2, 8)))
         );
         assert_eq!(breaker.next(), None);
-    }
-
-    #[test]
-    fn chunk_resulter_works() {
-        let mut source = vec![
-            Chunk::new(String::from("cat"), 0, 0),
-            Chunk::new(String::from("dog"), 0, 0),
-        ]
-        .into_iter();
-        let mut pp = ChunkResulter::new(&mut source);
-
-        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("cat"), 0, 0))));
-        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("dog"), 0, 0))));
-        assert_eq!(pp.next(), None);
     }
 }
