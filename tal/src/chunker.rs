@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::io::BufRead;
 use std::io::Bytes;
 use std::io::Read;
@@ -97,6 +98,34 @@ impl Iterator for Chunker<'_> {
     }
 }
 
+// In: Iterator<Item=Chunk>
+// Out: Iterator<Item=Result<Chunk,Error>>
+// All Results are always Ok
+pub struct ChunkResulter<'a> {
+    chunks: &'a mut dyn Iterator<Item = Chunk>,
+    comment_start: Option<Chunk>,
+}
+
+impl ChunkResulter<'_> {
+    pub fn new(chunks: &mut dyn Iterator<Item = Chunk>) -> ChunkResulter {
+        ChunkResulter {
+            chunks,
+            comment_start: None,
+        }
+    }
+}
+
+impl Iterator for ChunkResulter<'_> {
+    type Item = Result<Chunk, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.chunks.next() {
+            Some(chunk) => Some(Ok(chunk)),
+            None => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,5 +159,19 @@ mod tests {
             Some(Chunk::new(String::from("possum"), 2, 8))
         );
         assert_eq!(breaker.next(), None);
+    }
+
+    #[test]
+    fn chunk_resulter_works() {
+        let mut source = vec![
+            Chunk::new(String::from("cat"), 0, 0),
+            Chunk::new(String::from("dog"), 0, 0),
+        ]
+        .into_iter();
+        let mut pp = ChunkResulter::new(&mut source);
+
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("cat"), 0, 0))));
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("dog"), 0, 0))));
+        assert_eq!(pp.next(), None);
     }
 }
