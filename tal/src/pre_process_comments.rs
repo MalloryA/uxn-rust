@@ -58,7 +58,7 @@ mod tests {
         assert_eq!(
             pp.next(),
             Some(Err(Error::new(
-                "".to_string(),
+                "reached EOF without finding comment close".to_string(),
                 Chunk::new("(".to_string(), 0, 0)
             )))
         );
