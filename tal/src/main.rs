@@ -5,6 +5,7 @@ mod parser;
 mod pre_process_comments;
 mod token;
 
+use crate::chunker::ChunkResulter;
 use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::parser::parse;
@@ -18,7 +19,8 @@ use std::process::exit;
 
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), Error> {
     let mut chunker = Chunker::new(reader);
-    match parse(&mut chunker) {
+    let mut chunk_resulter = ChunkResulter::new(&mut chunker);
+    match parse(&mut chunk_resulter) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => panic!("{:?}", err),
