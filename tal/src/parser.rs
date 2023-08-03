@@ -331,6 +331,13 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
     }
 }
 
+macro_rules! standard_chain {
+    ( $input:expr ) => {{
+        let mut pp = PreProcessComments::new(&mut $input);
+        parse(&mut pp)
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -366,8 +373,7 @@ mod tests {
             Ok(Chunk::new(String::from("DEO2"), 3, 15)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut chunks);
-        let result = parse(&mut pp);
+        let result = standard_chain!(chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -393,8 +399,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut chunks);
-        let result = parse(&mut pp);
+        let result = standard_chain!(chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -420,8 +425,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut chunks);
-        let result = parse(&mut pp);
+        let result = standard_chain!(chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -442,8 +446,7 @@ mod tests {
             Ok(Chunk::new(String::from("#1234"), 0, 12)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut chunks);
-        let result = parse(&mut pp);
+        let result = standard_chain!(chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -469,8 +472,7 @@ mod tests {
             Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut chunks);
-        let result = parse(&mut pp);
+        let result = standard_chain!(chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
