@@ -2,6 +2,7 @@ use crate::chunker::Chunk;
 use crate::chunker::ChunkResulter;
 use crate::error::Error;
 use crate::opcode::Opcode;
+use crate::pre_process_comments::PreProcessComments;
 use crate::token::Token;
 use crate::token::TokenType;
 use std::collections::HashMap;
@@ -73,7 +74,6 @@ impl Rom {
 }
 
 pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
-    let mut comment_start: Option<Chunk> = None;
     let mut position: u16 = 0x100;
 
     // Addresses, references, etc
@@ -90,275 +90,242 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
     loop {
         let next = chunks.next();
 
-        if comment_start.is_some() {
-            // If we're in a comment, only respond to a CommentEnd token
-            match next {
-                None => {
-                    return Err(Error::new(
-                        "reached EOF without seeing a CommentEnd token".to_string(),
-                        comment_start.unwrap(),
-                    ))
-                }
-                Some(chunk) => {
-                    let result = Token::from_chunk(chunk?.clone());
-                    if result.is_ok() && result.unwrap().token_type == TokenType::CommentEnd {
-                        comment_start = None;
-                    }
-                }
-            }
-        } else {
-            match next {
-                None => {
-                    // Fill in all the fill_laters
-                    for fill in fill_later {
-                        match fill {
-                            FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
-                                let source = address_references.get(&name);
-                                if source.is_none() {
-                                    return Err(Error::new(
-                                        format!("unknown name \"{name}\""),
-                                        chunk,
-                                    ));
-                                }
-                                let mut source = *source.unwrap();
-                                if relative {
-                                    // Unclear why uxnasm wraps these
-                                    source =
-                                        source.wrapping_sub(target).wrapping_sub(relative_subtract);
-                                }
-                                let (_high, low) = split_short(source);
-                                rom.write_byte(target, low);
+        match next {
+            None => {
+                // Fill in all the fill_laters
+                for fill in fill_later {
+                    match fill {
+                        FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
+                            let source = address_references.get(&name);
+                            if source.is_none() {
+                                return Err(Error::new(format!("unknown name \"{name}\""), chunk));
                             }
-                            FillLater::Short(target, relative, relative_subtract, name, chunk) => {
-                                let source = address_references.get(&name);
-                                if source.is_none() {
-                                    return Err(Error::new(
-                                        format!("unknown name \"{name}\""),
-                                        chunk,
-                                    ));
-                                }
-                                let mut source = *source.unwrap();
-                                if relative {
-                                    source =
-                                        source.wrapping_sub(target).wrapping_sub(relative_subtract);
-                                }
-                                let (high, low) = split_short(source);
-                                rom.write_byte(target, high);
-                                rom.write_byte(target + 1, low);
+                            let mut source = *source.unwrap();
+                            if relative {
+                                // Unclear why uxnasm wraps these
+                                source =
+                                    source.wrapping_sub(target).wrapping_sub(relative_subtract);
                             }
+                            let (_high, low) = split_short(source);
+                            rom.write_byte(target, low);
+                        }
+                        FillLater::Short(target, relative, relative_subtract, name, chunk) => {
+                            let source = address_references.get(&name);
+                            if source.is_none() {
+                                return Err(Error::new(format!("unknown name \"{name}\""), chunk));
+                            }
+                            let mut source = *source.unwrap();
+                            if relative {
+                                source =
+                                    source.wrapping_sub(target).wrapping_sub(relative_subtract);
+                            }
+                            let (high, low) = split_short(source);
+                            rom.write_byte(target, high);
+                            rom.write_byte(target + 1, low);
                         }
                     }
-
-                    return Ok(rom);
                 }
-                Some(chunk) => {
-                    let chunk = chunk?;
-                    match Token::from_chunk(chunk.clone()) {
-                        Err(err) => return Err(Error::new(err, chunk)),
-                        Ok(token) => match token.token_type {
-                            TokenType::Opcode(opcode) => {
-                                rom.write_byte(position, opcode.as_byte());
-                                position += 1;
-                            }
-                            TokenType::RawByte(byte) => {
+
+                return Ok(rom);
+            }
+            Some(chunk) => {
+                let chunk = chunk?;
+                match Token::from_chunk(chunk.clone()) {
+                    Err(err) => return Err(Error::new(err, chunk)),
+                    Ok(token) => match token.token_type {
+                        TokenType::Opcode(opcode) => {
+                            rom.write_byte(position, opcode.as_byte());
+                            position += 1;
+                        }
+                        TokenType::RawByte(byte) => {
+                            rom.write_byte(position, byte);
+                            position += 1;
+                        }
+                        TokenType::RawShort(short) => {
+                            let (high, low) = split_short(short);
+                            rom.write_byte(position, high);
+                            position += 1;
+                            rom.write_byte(position, low);
+                            position += 1;
+                        }
+                        TokenType::PaddingAbsolute(offset) => {
+                            position = offset;
+                        }
+                        TokenType::PaddingRelative(offset) => {
+                            position += offset;
+                        }
+                        TokenType::Ascii(value) => {
+                            for byte in value.bytes() {
                                 rom.write_byte(position, byte);
                                 position += 1;
                             }
-                            TokenType::RawShort(short) => {
-                                let (high, low) = split_short(short);
-                                rom.write_byte(position, high);
-                                position += 1;
-                                rom.write_byte(position, low);
-                                position += 1;
-                            }
-                            TokenType::PaddingAbsolute(offset) => {
-                                position = offset;
-                            }
-                            TokenType::PaddingRelative(offset) => {
-                                position += offset;
-                            }
-                            TokenType::CommentStart => {
-                                comment_start = Some(chunk);
-                            }
-                            TokenType::Ascii(value) => {
-                                for byte in value.bytes() {
-                                    rom.write_byte(position, byte);
-                                    position += 1;
-                                }
-                            }
-                            TokenType::LitByte(byte) => {
-                                rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                                position += 1;
-                                rom.write_byte(position, byte);
-                                position += 1;
-                            }
-                            TokenType::LitShort(short) => {
-                                rom.write_byte(position, Opcode::LIT(true, false).as_byte());
-                                position += 1;
+                        }
+                        TokenType::LitByte(byte) => {
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                            position += 1;
+                            rom.write_byte(position, byte);
+                            position += 1;
+                        }
+                        TokenType::LitShort(short) => {
+                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                            position += 1;
 
-                                let (high, low) = split_short(short);
-                                rom.write_byte(position, high);
-                                position += 1;
-                                rom.write_byte(position, low);
-                                position += 1;
-                            }
-                            TokenType::AddressLiteralZeroPage(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                                position += 1;
-
-                                fill_later
-                                    .push(FillLater::Byte(position, false, 0, full_name, chunk));
-                                position += 1;
-                            }
-                            TokenType::AddressLiteralAbsolute(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                rom.write_byte(position, Opcode::LIT(true, false).as_byte());
-                                position += 1;
-
-                                fill_later
-                                    .push(FillLater::Short(position, false, 0, full_name, chunk));
-                                position += 2;
-                            }
-                            TokenType::AddressLiteralRelative(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                                position += 1;
-
-                                fill_later
-                                    .push(FillLater::Byte(position, true, 2, full_name, chunk));
-                                position += 1;
-                            }
-                            TokenType::AddressRawAbsolute(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                fill_later
-                                    .push(FillLater::Byte(position, false, 0, full_name, chunk));
-                                position += 1;
-                            }
-                            TokenType::ImmediateUnconditional(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                rom.write_byte(position, Opcode::JMI.as_byte());
-                                position += 1;
-
-                                fill_later
-                                    .push(FillLater::Short(position, true, 2, full_name, chunk));
-                                position += 2;
-                            }
-                            TokenType::ImmediateConditional(name, child) => {
-                                // TODO: DRY
-                                let full_name = if child {
-                                    if parent.is_none() {
-                                        return Err(Error::new(
-                                            "used &name without parent".to_string(),
-                                            chunk,
-                                        ));
-                                    }
-                                    let p = parent.clone().unwrap();
-                                    format!("{p}/{name}")
-                                } else {
-                                    name
-                                };
-
-                                rom.write_byte(position, Opcode::JCI.as_byte());
-                                position += 1;
-
-                                fill_later
-                                    .push(FillLater::Short(position, true, 2, full_name, chunk));
-                                position += 2;
-                            }
-                            TokenType::LabelParent(name) => {
-                                parent = Some(name.clone());
-                                address_references.insert(name, position);
-                            }
-                            TokenType::LabelChild(name) => {
-                                if let Some(parent_name) = parent.clone() {
-                                    let full_name = format!("{}/{}", parent_name, name);
-                                    address_references.insert(full_name, position);
-                                } else {
+                            let (high, low) = split_short(short);
+                            rom.write_byte(position, high);
+                            position += 1;
+                            rom.write_byte(position, low);
+                            position += 1;
+                        }
+                        TokenType::AddressLiteralZeroPage(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
                                     return Err(Error::new(
-                                        "child label specified before parent label".to_string(),
+                                        "used &name without parent".to_string(),
                                         chunk,
                                     ));
                                 }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                            position += 1;
+                        }
+                        TokenType::AddressLiteralAbsolute(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
+                            position += 2;
+                        }
+                        TokenType::AddressLiteralRelative(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
+                            position += 1;
+                        }
+                        TokenType::AddressRawAbsolute(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                            position += 1;
+                        }
+                        TokenType::ImmediateUnconditional(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::JMI.as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                            position += 2;
+                        }
+                        TokenType::ImmediateConditional(name, child) => {
+                            // TODO: DRY
+                            let full_name = if child {
+                                if parent.is_none() {
+                                    return Err(Error::new(
+                                        "used &name without parent".to_string(),
+                                        chunk,
+                                    ));
+                                }
+                                let p = parent.clone().unwrap();
+                                format!("{p}/{name}")
+                            } else {
+                                name
+                            };
+
+                            rom.write_byte(position, Opcode::JCI.as_byte());
+                            position += 1;
+
+                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                            position += 2;
+                        }
+                        TokenType::LabelParent(name) => {
+                            parent = Some(name.clone());
+                            address_references.insert(name, position);
+                        }
+                        TokenType::LabelChild(name) => {
+                            if let Some(parent_name) = parent.clone() {
+                                let full_name = format!("{}/{}", parent_name, name);
+                                address_references.insert(full_name, position);
+                            } else {
+                                return Err(Error::new(
+                                    "child label specified before parent label".to_string(),
+                                    chunk,
+                                ));
                             }
-                            TokenType::MacroOrInstant(name) => {
-                                // TODO: Assume instant (JSI)
-                                rom.write_byte(position, Opcode::JSI.as_byte());
-                                position += 1;
-                                fill_later.push(FillLater::Short(position, true, 2, name, chunk));
-                                position += 2;
-                            }
-                            TokenType::Bracket => {
-                                // Ignore
-                            }
-                            _ => todo!("{:?}", token),
-                        },
-                    }
+                        }
+                        TokenType::MacroOrInstant(name) => {
+                            // TODO: Assume instant (JSI)
+                            rom.write_byte(position, Opcode::JSI.as_byte());
+                            position += 1;
+                            fill_later.push(FillLater::Short(position, true, 2, name, chunk));
+                            position += 2;
+                        }
+                        TokenType::Bracket => {
+                            // Ignore
+                        }
+                        _ => todo!("{:?}", token),
+                    },
                 }
             }
         }
@@ -401,7 +368,8 @@ mod tests {
         ]
         .into_iter();
         let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let result = parse(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -428,7 +396,8 @@ mod tests {
         ]
         .into_iter();
         let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let result = parse(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -455,7 +424,8 @@ mod tests {
         ]
         .into_iter();
         let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let result = parse(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -477,7 +447,8 @@ mod tests {
         ]
         .into_iter();
         let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let result = parse(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -504,7 +475,8 @@ mod tests {
         ]
         .into_iter();
         let mut chunk_resulter = ChunkResulter::new(&mut chunks);
-        let result = parse(&mut chunk_resulter);
+        let mut pp = PreProcessComments::new(&mut chunk_resulter);
+        let result = parse(&mut pp);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);

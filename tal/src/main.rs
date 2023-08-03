@@ -9,6 +9,7 @@ use crate::chunker::ChunkResulter;
 use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::parser::parse;
+use crate::pre_process_comments::PreProcessComments;
 use std::env::args;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -20,7 +21,8 @@ use std::process::exit;
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), Error> {
     let mut chunker = Chunker::new(reader);
     let mut chunk_resulter = ChunkResulter::new(&mut chunker);
-    match parse(&mut chunk_resulter) {
+    let mut pp = PreProcessComments::new(&mut chunk_resulter);
+    match parse(&mut pp) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => panic!("{:?}", err),
