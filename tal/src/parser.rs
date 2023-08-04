@@ -2,6 +2,7 @@ use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::pre_process_comments::PreProcessComments;
+use crate::pre_process_macros::PreProcessMacros;
 use crate::token::Token;
 use crate::token::TokenType;
 use std::collections::HashMap;
@@ -333,7 +334,9 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
 
 macro_rules! standard_chain {
     ( $input:expr ) => {{
-        let mut pp = PreProcessComments::new(&mut $input);
+        let mut pp = $input;
+        let mut pp = PreProcessComments::new(&mut pp);
+        let mut pp = PreProcessComments::new(&mut pp);
         parse(&mut pp)
     }};
 }
@@ -452,32 +455,6 @@ mod tests {
         assert_eq!(rom, expected);
     }
 
-    // TODO: Re-enable this when we support macros
-    // #[test]
-    fn macros_work() {
-        let mut expected = Rom::new();
-        expected.write_byte(0x100, 0xa0);
-        expected.write_byte(0x101, 0x12);
-        expected.write_byte(0x102, 0x34);
-        expected.write_byte(0x102, 0x80);
-        expected.write_byte(0x102, 0x17);
-
-        let mut chunks = vec![
-            Ok(Chunk::new(String::from("%EMIT"), 0, 0)),
-            Ok(Chunk::new(String::from("{"), 0, 6)),
-            Ok(Chunk::new(String::from("#18"), 0, 8)),
-            Ok(Chunk::new(String::from("DEO"), 0, 12)),
-            Ok(Chunk::new(String::from("}"), 0, 15)),
-            Ok(Chunk::new(String::from("#1234"), 0, 17)),
-            Ok(Chunk::new(String::from("EMIT"), 0, 23)),
-        ]
-        .into_iter();
-        let result = standard_chain!(chunks);
-        assert!(result.is_ok());
-        let rom = result.unwrap();
-        assert_eq!(rom, expected);
-    }
-
     #[test]
     fn rom() {
         let mut rom = Rom::new();
@@ -505,5 +482,30 @@ mod tests {
         let actual = format!("{:?}", rom);
         let expected = "8068 8018 0000 0000 0000 0000 0000 0000\n0000 0000 0000 0000 0000 0000 0000 0000\n0000 0000 0017".to_string();
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn macros_work() {
+        let mut expected = Rom::new();
+        expected.write_byte(0x100, 0xa0);
+        expected.write_byte(0x101, 0x12);
+        expected.write_byte(0x102, 0x34);
+        expected.write_byte(0x102, 0x80);
+        expected.write_byte(0x102, 0x17);
+
+        let mut chunks = vec![
+            Ok(Chunk::new(String::from("%EMIT"), 0, 0)),
+            Ok(Chunk::new(String::from("{"), 0, 6)),
+            Ok(Chunk::new(String::from("#18"), 0, 8)),
+            Ok(Chunk::new(String::from("DEO"), 0, 12)),
+            Ok(Chunk::new(String::from("}"), 0, 15)),
+            Ok(Chunk::new(String::from("#1234"), 0, 17)),
+            Ok(Chunk::new(String::from("EMIT"), 0, 23)),
+        ]
+        .into_iter();
+        let result = standard_chain!(chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected);
     }
 }

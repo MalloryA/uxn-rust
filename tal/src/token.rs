@@ -24,6 +24,8 @@ pub enum TokenType {
     AddressLiteralRelative(String, bool),
     AddressRawAbsolute(String, bool),
     MacroDefinition(String),
+    MacroOpen,
+    MacroClose,
 }
 
 impl TokenType {
@@ -34,6 +36,8 @@ impl TokenType {
             "[" | "]" => Some(TokenType::Bracket),
             "(" => Some(TokenType::CommentStart),
             ")" => Some(TokenType::CommentEnd),
+            "{" => Some(TokenType::MacroOpen),
+            "}" => Some(TokenType::MacroClose),
             _ => None,
         };
         if let Some(tt) = token_type {
@@ -426,5 +430,15 @@ mod tests {
     #[test]
     fn macro_definition_fails() {
         assert_err!("%");
+    }
+
+    #[test]
+    fn macro_open_works() {
+        assert_match!("{", TokenType::MacroOpen);
+    }
+
+    #[test]
+    fn macro_close_works() {
+        assert_match!("}", TokenType::MacroClose);
     }
 }

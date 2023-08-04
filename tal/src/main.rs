@@ -4,6 +4,7 @@ mod opcode;
 #[macro_use]
 mod parser;
 mod pre_process_comments;
+mod pre_process_macros;
 mod token;
 
 use crate::chunker::Chunker;
