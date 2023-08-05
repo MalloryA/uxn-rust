@@ -22,7 +22,7 @@ pub struct PreProcessMacros<'a> {
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     macro_state: MacroState,
     macro_definitions: HashMap<String, Vec<Chunk>>,
-    replacement: &'a Iter<'a, Chunk>,
+    replacement: Vec<Chunk>,
 }
 
 impl PreProcessMacros<'_> {
@@ -31,7 +31,7 @@ impl PreProcessMacros<'_> {
             chunks,
             macro_state: MacroState::WaitingForName,
             macro_definitions: HashMap::new(),
-            replacement: &vec![].iter(),
+            replacement: vec![],
         }
     }
 }
@@ -40,8 +40,8 @@ impl Iterator for PreProcessMacros<'_> {
     type Item = Result<Chunk, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(chunk) = self.replacement.next() {
-            return Some(Ok(chunk.clone()));
+        if !self.replacement.is_empty() {
+            return Some(Ok(self.replacement.remove(0)));
         }
 
         loop {
@@ -56,7 +56,7 @@ impl Iterator for PreProcessMacros<'_> {
                                 continue;
                             } else if let TokenType::MacroOrInstant(name) = token.token_type {
                                 self.replacement =
-                                    &self.macro_definitions.get(&name).unwrap().iter();
+                                    self.macro_definitions.get(&name).unwrap().to_vec();
                                 continue;
                             }
                         }
