@@ -55,9 +55,15 @@ impl Iterator for PreProcessMacros<'_> {
                                 self.macro_state = MacroState::WaitingForOpen(name.clone());
                                 continue;
                             } else if let TokenType::MacroOrInstant(name) = token.token_type {
-                                self.replacement =
-                                    self.macro_definitions.get(&name).unwrap().to_vec();
-                                continue;
+                                if let Some(definition) = self.macro_definitions.get(&name) {
+                                    // We found a macro definition for this name
+                                    self.replacement = definition.to_vec();
+                                    continue;
+                                } else {
+                                    // We didn't find a macro definition for this name
+                                    // So treat it like it's an instant invocation and allow it to
+                                    // pass through instead
+                                }
                             }
                         }
                         MacroState::WaitingForOpen(name) => {
