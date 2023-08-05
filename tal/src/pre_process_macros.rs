@@ -40,11 +40,11 @@ impl Iterator for PreProcessMacros<'_> {
     type Item = Result<Chunk, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.replacement.is_empty() {
-            return Some(Ok(self.replacement.remove(0)));
-        }
-
         loop {
+            if !self.replacement.is_empty() {
+                return Some(Ok(self.replacement.remove(0)));
+            }
+
             let next = self.chunks.next();
 
             if let Some(Ok(chunk)) = next {

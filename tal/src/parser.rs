@@ -336,7 +336,7 @@ macro_rules! standard_chain {
     ( $input:expr ) => {{
         let mut pp = $input;
         let mut pp = PreProcessComments::new(&mut pp);
-        let mut pp = PreProcessComments::new(&mut pp);
+        let mut pp = PreProcessMacros::new(&mut pp);
         parse(&mut pp)
     }};
 }
@@ -490,8 +490,9 @@ mod tests {
         expected.write_byte(0x100, 0xa0);
         expected.write_byte(0x101, 0x12);
         expected.write_byte(0x102, 0x34);
-        expected.write_byte(0x102, 0x80);
-        expected.write_byte(0x102, 0x17);
+        expected.write_byte(0x103, 0x80);
+        expected.write_byte(0x104, 0x18);
+        expected.write_byte(0x105, 0x17);
 
         let mut chunks = vec![
             Ok(Chunk::new(String::from("%EMIT"), 0, 0)),
