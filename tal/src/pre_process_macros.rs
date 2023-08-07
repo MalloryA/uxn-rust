@@ -41,11 +41,11 @@ impl Iterator for PreProcessMacros<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if !self.replacement.is_empty() {
-                return Some(Ok(self.replacement.remove(0)));
-            }
-
-            let next = self.chunks.next();
+            let next = if !self.replacement.is_empty() {
+                Some(Ok(self.replacement.remove(0)))
+            } else {
+                self.chunks.next()
+            };
 
             if let Some(Ok(chunk)) = next {
                 if let Ok(token) = Token::from_chunk(chunk.clone()) {
@@ -108,6 +108,8 @@ impl Iterator for PreProcessMacros<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chunker::Chunker;
+    use std::io::Cursor;
 
     #[test]
     fn it_works() {
@@ -127,6 +129,21 @@ mod tests {
             pp.next(),
             Some(Ok(Chunk::new(String::from("#1234"), 0, 17)))
         );
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("#18"), 0, 8))));
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("DEO"), 0, 12))));
+        assert_eq!(pp.next(), None);
+    }
+
+    #[test]
+    fn macros_inside_macros_work() {
+        let mut buffer =
+            Cursor::new("%EMIT { #18 DEO } %TEST-SHORT { EQU2 #30 ADD EMIT } TEST-SHORT");
+        let mut source = Chunker::new(&mut buffer);
+        let mut pp = PreProcessMacros::new(&mut source);
+
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("EQU2"), 0, 32))));
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("#30"), 0, 37))));
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("ADD"), 0, 41))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("#18"), 0, 8))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("DEO"), 0, 12))));
         assert_eq!(pp.next(), None);
