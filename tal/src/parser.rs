@@ -28,6 +28,7 @@ enum FillLater {
 #[derive(PartialEq)]
 pub struct Rom {
     rom: [u8; 0xff00],
+    highest_byte_written: usize,
 }
 
 impl Debug for Rom {
@@ -48,28 +49,25 @@ impl Debug for Rom {
 
 impl Rom {
     pub fn new() -> Self {
-        Rom { rom: [0; 0xff00] }
+        Rom {
+            rom: [0; 0xff00],
+            highest_byte_written: 0,
+        }
     }
 
     pub fn write_byte(&mut self, position: u16, byte: u8) {
         if position < 0x100 {
             panic!("Cannot write at i < 0x100 where i={:x}", position);
         }
-        self.rom[position as usize - 0x100] = byte;
+        let real_position = position as usize - 0x100;
+        if real_position > self.highest_byte_written {
+            self.highest_byte_written = real_position;
+        }
+        self.rom[real_position] = byte;
     }
 
     pub fn get_bytes(&self) -> &[u8] {
-        let mut last_non_null: Option<usize> = None;
-        let iter = self.rom.iter();
-        for (i, byte) in iter.enumerate() {
-            if *byte != 0x00 {
-                last_non_null = Some(i);
-            }
-        }
-        match last_non_null {
-            None => &[],
-            Some(size) => &self.rom[0..size + 1],
-        }
+        &self.rom[0..self.highest_byte_written + 1]
     }
 }
 
