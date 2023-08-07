@@ -1,17 +1,10 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
-use crate::opcode::Opcode;
-use crate::pre_process_comments::PreProcessComments;
 use crate::token::Token;
 use crate::token::TokenType;
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::fmt::Formatter;
-use std::io::BufRead;
-use std::io::Bytes;
-use std::io::Read;
-use std::slice::Iter;
 
+#[allow(clippy::enum_variant_names)]
 enum MacroState {
     WaitingForName,
     WaitingForOpen(String),

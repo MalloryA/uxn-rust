@@ -21,7 +21,7 @@ use std::io::Write;
 use std::process::exit;
 
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), Error> {
-    let mut chunker = Chunker::new(reader);
+    let chunker = Chunker::new(reader);
     match standard_chain!(chunker) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),

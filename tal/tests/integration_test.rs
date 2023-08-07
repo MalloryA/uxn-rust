@@ -19,7 +19,7 @@ impl Rom {
         match contents {
             Err(err) => Err(err.to_string()),
             Ok(contents) => {
-                for (i, byte) in contents.into_iter().enumerate() {
+                for byte in contents.into_iter() {
                     rom.rom.push(byte);
                 }
                 Ok(rom)

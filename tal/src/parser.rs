@@ -1,8 +1,6 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::opcode::Opcode;
-use crate::pre_process_comments::PreProcessComments;
-use crate::pre_process_macros::PreProcessMacros;
 use crate::token::Token;
 use crate::token::TokenType;
 use std::collections::HashMap;
@@ -342,6 +340,8 @@ macro_rules! standard_chain {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pre_process_comments::PreProcessComments;
+    use crate::pre_process_macros::PreProcessMacros;
 
     #[test]
     fn it_works() {
@@ -358,7 +358,7 @@ mod tests {
         expected.write_byte(0x109, 0x00);
         expected.write_byte(0x10a, 0x37);
 
-        let mut chunks = vec![
+        let chunks = vec![
             Ok(Chunk::new(String::from("|00"), 0, 0)),
             Ok(Chunk::new(String::from("@System"), 0, 4)),
             Ok(Chunk::new(String::from("&vector"), 0, 12)),
@@ -392,7 +392,7 @@ mod tests {
         expected.write_byte(0x106, 0x56);
         expected.write_byte(0x107, 0x78);
 
-        let mut chunks = vec![
+        let chunks = vec![
             Ok(Chunk::new(String::from("|0100"), 0, 0)),
             Ok(Chunk::new(String::from(",foo"), 0, 6)),
             Ok(Chunk::new(String::from("#1234"), 0, 11)),
@@ -418,7 +418,7 @@ mod tests {
         expected.write_byte(0x106, 0x56);
         expected.write_byte(0x107, 0x78);
 
-        let mut chunks = vec![
+        let chunks = vec![
             Ok(Chunk::new(String::from("|0100"), 0, 0)),
             Ok(Chunk::new(String::from("@bar"), 0, 6)),
             Ok(Chunk::new(String::from("#1234"), 0, 11)),
@@ -439,7 +439,7 @@ mod tests {
         expected.write_byte(0x101, 0x12);
         expected.write_byte(0x102, 0x34);
 
-        let mut chunks = vec![
+        let chunks = vec![
             Ok(Chunk::new(String::from("|0100"), 0, 0)),
             Ok(Chunk::new(String::from("("), 0, 6)),
             Ok(Chunk::new(String::from("#"), 0, 8)),
@@ -494,7 +494,7 @@ mod tests {
         expected.write_byte(0x104, 0x18);
         expected.write_byte(0x105, 0x17);
 
-        let mut chunks = vec![
+        let chunks = vec![
             Ok(Chunk::new(String::from("%EMIT"), 0, 0)),
             Ok(Chunk::new(String::from("{"), 0, 6)),
             Ok(Chunk::new(String::from("#18"), 0, 8)),

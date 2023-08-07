@@ -2,9 +2,6 @@ use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::token::Token;
 use crate::token::TokenType;
-use std::io::BufRead;
-use std::io::Bytes;
-use std::io::Read;
 
 pub struct PreProcessComments<'a> {
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
