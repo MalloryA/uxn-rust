@@ -151,6 +151,14 @@ impl TokenType {
                 Some(TokenType::AddressLiteralAbsolute(name.to_string(), child))
             }
 
+            ":" => {
+                let (name, child) = parse_name(&chunk.value[1..]);
+                if name.is_empty() {
+                    return Err("could not parse AddressRawAbsolute".to_string());
+                }
+                Some(TokenType::AddressRawAbsolute(name.to_string(), child))
+            }
+
             "," => {
                 let (name, child) = parse_name(&chunk.value[1..]);
                 if name.is_empty() {
@@ -415,6 +423,34 @@ mod tests {
     fn address_literal_absolute_fails() {
         assert_err!(";");
         assert_err!(";&");
+    }
+
+    #[test]
+    fn address_raw_absolute_works() {
+        assert_match!(
+            ":foo-bar",
+            TokenType::AddressRawAbsolute("foo-bar".to_string(), false)
+        );
+        assert_match!(
+            ":&foo-bar",
+            TokenType::AddressRawAbsolute("foo-bar".to_string(), true)
+        );
+        assert_match!(
+            "-foo-bar",
+            TokenType::AddressRawAbsolute("foo-bar".to_string(), false)
+        );
+        assert_match!(
+            "-&foo-bar",
+            TokenType::AddressRawAbsolute("foo-bar".to_string(), true)
+        );
+    }
+
+    #[test]
+    fn address_raw_absolute_fails() {
+        assert_err!(":");
+        assert_err!(":&");
+        assert_err!("-");
+        assert_err!("-&");
     }
 
     #[test]
