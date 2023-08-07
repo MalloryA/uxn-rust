@@ -69,6 +69,19 @@ impl Rom {
     }
 }
 
+fn get_full_name(name: String, parent: &Option<String>, child: bool) -> String {
+    if child {
+        if parent.is_none() {
+            format!("/{name}")
+        } else {
+            let p = parent.clone().unwrap();
+            format!("{p}/{name}")
+        }
+    } else {
+        name
+    }
+}
+
 pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
     let mut position: u16 = 0x100;
 
@@ -173,19 +186,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             position += 1;
                         }
                         TokenType::AddressLiteralZeroPage(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
@@ -194,19 +195,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             position += 1;
                         }
                         TokenType::AddressLiteralAbsolute(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                             position += 1;
@@ -215,19 +204,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             position += 2;
                         }
                         TokenType::AddressLiteralRelative(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                             position += 1;
@@ -236,37 +213,13 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             position += 1;
                         }
                         TokenType::AddressRawAbsolute(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
                             position += 1;
                         }
                         TokenType::ImmediateUnconditional(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             rom.write_byte(position, Opcode::JMI.as_byte());
                             position += 1;
@@ -275,19 +228,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             position += 2;
                         }
                         TokenType::ImmediateConditional(name, child) => {
-                            // TODO: DRY
-                            let full_name = if child {
-                                if parent.is_none() {
-                                    return Err(Error::new(
-                                        "used &name without parent".to_string(),
-                                        chunk,
-                                    ));
-                                }
-                                let p = parent.clone().unwrap();
-                                format!("{p}/{name}")
-                            } else {
-                                name
-                            };
+                            let full_name = get_full_name(name, &parent, child);
 
                             rom.write_byte(position, Opcode::JCI.as_byte());
                             position += 1;
@@ -300,15 +241,8 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
                             address_references.insert(name, position);
                         }
                         TokenType::LabelChild(name) => {
-                            if let Some(parent_name) = parent.clone() {
-                                let full_name = format!("{}/{}", parent_name, name);
-                                address_references.insert(full_name, position);
-                            } else {
-                                return Err(Error::new(
-                                    "child label specified before parent label".to_string(),
-                                    chunk,
-                                ));
-                            }
+                            let full_name = get_full_name(name, &parent, true);
+                            address_references.insert(full_name, position);
                         }
                         TokenType::MacroOrInstant(name) => {
                             // TODO: Assume instant (JSI)
