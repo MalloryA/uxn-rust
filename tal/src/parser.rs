@@ -462,7 +462,9 @@ mod tests {
         rom.write_byte(0x103, 0x18);
         // skip one
         rom.write_byte(0x105, 0x17);
-        let expected: [u8; 6] = [0x80, 0x68, 0x80, 0x18, 0x00, 0x17];
+        // write a null
+        rom.write_byte(0x106, 0x00);
+        let expected: [u8; 7] = [0x80, 0x68, 0x80, 0x18, 0x00, 0x17, 0x00];
 
         assert_eq!(rom.get_bytes(), expected);
     }
