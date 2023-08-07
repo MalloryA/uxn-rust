@@ -86,13 +86,6 @@ impl Iterator for PreProcessMacros<'_> {
                 return Some(Ok(chunk));
             }
 
-            // if next.is_none() && self.comment_start.is_some() {
-            //     return Some(Err(Error::new(
-            //         "reached EOF without finding comment close".to_string(),
-            //         self.comment_start.clone().unwrap(),
-            //     )));
-            // }
-
             return next;
         }
     }
