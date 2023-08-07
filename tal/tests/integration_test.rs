@@ -9,18 +9,18 @@ use std::process::Command;
 
 #[derive(PartialEq)]
 pub struct Rom {
-    rom: [u8; 0xff00],
+    rom: Vec<u8>,
 }
 
 impl Rom {
     fn from_file(path: PathBuf) -> Result<Rom, String> {
-        let mut rom = Rom { rom: [0; 0xff00] };
+        let mut rom = Rom { rom: vec![] };
         let contents = read(path);
         match contents {
             Err(err) => Err(err.to_string()),
             Ok(contents) => {
                 for (i, byte) in contents.into_iter().enumerate() {
-                    rom.rom[i] = byte;
+                    rom.rom.push(byte);
                 }
                 Ok(rom)
             }
@@ -28,17 +28,7 @@ impl Rom {
     }
 
     fn get_bytes(&self) -> &[u8] {
-        let mut last_non_null: Option<usize> = None;
-        let iter = self.rom.iter();
-        for (i, byte) in iter.enumerate() {
-            if *byte != 0x00 {
-                last_non_null = Some(i);
-            }
-        }
-        match last_non_null {
-            None => &[],
-            Some(size) => &self.rom[0..size + 1],
-        }
+        &self.rom
     }
 }
 
@@ -97,7 +87,12 @@ fn expect_eq_rom(left: Rom, right: Rom) -> Result<(), String> {
             (Some(l), Some(r)) => {
                 expect_eq(l.to_string(), r.to_string(), format!("failed at line {i}"))?;
             }
-            _ => todo!(),
+            (Some(l), None) => {
+                expect_eq(l.to_string(), "".to_string(), format!("failed at line {i}"))?;
+            }
+            (None, Some(r)) => {
+                expect_eq("".to_string(), r.to_string(), format!("failed at line {i}"))?;
+            }
         }
     }
     Ok(())
