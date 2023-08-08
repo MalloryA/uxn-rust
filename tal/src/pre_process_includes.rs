@@ -3,7 +3,6 @@ use crate::error::Error;
 use crate::parser::chunk_file;
 use crate::token::Token;
 use crate::token::TokenType;
-use std::env::current_dir;
 use std::path::Path;
 
 pub struct PreProcessIncludes<'a> {
@@ -56,6 +55,7 @@ impl Iterator for PreProcessIncludes<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env::current_dir;
 
     #[test]
     fn it_works() {

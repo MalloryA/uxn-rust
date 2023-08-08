@@ -3,6 +3,7 @@ use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::pre_process_comments::PreProcessComments;
+use crate::pre_process_includes::PreProcessIncludes;
 use crate::pre_process_macros::PreProcessMacros;
 use crate::token::Token;
 use crate::token::TokenType;
@@ -272,18 +273,23 @@ pub fn chunk_file(cwd: &Path, file: &Path) -> Vec<Result<Chunk, Error>> {
     let full_path = cwd.join(file);
     let mut input = BufReader::new(File::open(full_path).unwrap());
     let mut chunker = Chunker::new(&mut input);
-    pre_process(&mut chunker)
+    pre_process(&cwd, &mut chunker)
 }
 
-pub fn parse_chunks(input: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
-    parse(&mut pre_process(input).into_iter())
+pub fn parse_chunks(
+    cwd: &Path,
+    input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
+) -> Result<Rom, Error> {
+    parse(&mut pre_process(&cwd, input).into_iter())
 }
 
 pub fn pre_process(
+    cwd: &Path,
     input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
 ) -> Vec<Result<Chunk, Error>> {
     let mut pp = input;
     let mut pp = PreProcessComments::new(&mut pp);
+    let mut pp = PreProcessIncludes::new(&cwd, &mut pp);
     let pp = PreProcessMacros::new(&mut pp);
     pp.collect()
 }
@@ -323,7 +329,7 @@ mod tests {
             Ok(Chunk::new(String::from("DEO2"), 3, 15)),
         ]
         .into_iter();
-        let result = parse_chunks(&mut chunks);
+        let result = parse_chunks(&Path::new(""), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -349,7 +355,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&mut chunks);
+        let result = parse_chunks(&Path::new(""), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -375,7 +381,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&mut chunks);
+        let result = parse_chunks(&Path::new(""), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -396,7 +402,7 @@ mod tests {
             Ok(Chunk::new(String::from("#1234"), 0, 12)),
         ]
         .into_iter();
-        let result = parse_chunks(&mut chunks);
+        let result = parse_chunks(&Path::new(""), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -453,7 +459,7 @@ mod tests {
             Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&mut chunks);
+        let result = parse_chunks(&Path::new(""), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
