@@ -84,7 +84,7 @@ fn get_full_name(name: String, parent: &Option<String>, child: bool) -> String {
     }
 }
 
-pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
+fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
     let mut position: u16 = 0x100;
 
     // Addresses, references, etc
