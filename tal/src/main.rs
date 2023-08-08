@@ -9,7 +9,7 @@ mod token;
 
 use crate::chunker::Chunker;
 use crate::error::Error;
-use crate::parser::standard_chain;
+use crate::parser::parse_chunks;
 use std::env::args;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -20,7 +20,7 @@ use std::process::exit;
 
 fn read_and_write(writer: &mut dyn Write, reader: &mut dyn BufRead) -> Result<(), Error> {
     let mut chunker = Chunker::new(reader);
-    match standard_chain(&mut chunker) {
+    match parse_chunks(&mut chunker) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => panic!("{:?}", err),

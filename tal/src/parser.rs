@@ -264,7 +264,7 @@ pub fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<R
     }
 }
 
-pub fn standard_chain(input: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
+pub fn parse_chunks(input: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
     let mut pp = input;
     let mut pp = PreProcessComments::new(&mut pp);
     let mut pp = PreProcessMacros::new(&mut pp);
@@ -306,7 +306,7 @@ mod tests {
             Ok(Chunk::new(String::from("DEO2"), 3, 15)),
         ]
         .into_iter();
-        let result = standard_chain(&mut chunks);
+        let result = parse_chunks(&mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -332,7 +332,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = standard_chain(&mut chunks);
+        let result = parse_chunks(&mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -358,7 +358,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = standard_chain(&mut chunks);
+        let result = parse_chunks(&mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -379,7 +379,7 @@ mod tests {
             Ok(Chunk::new(String::from("#1234"), 0, 12)),
         ]
         .into_iter();
-        let result = standard_chain(&mut chunks);
+        let result = parse_chunks(&mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -436,7 +436,7 @@ mod tests {
             Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let result = standard_chain(&mut chunks);
+        let result = parse_chunks(&mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
