@@ -1,4 +1,5 @@
 use crate::chunker::Chunk;
+use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::opcode::Opcode;
 use crate::pre_process_comments::PreProcessComments;
@@ -8,6 +9,9 @@ use crate::token::TokenType;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
 
 fn split_short(short: u16) -> (u8, u8) {
     let high: u8 = (short >> 8).try_into().unwrap();
@@ -264,11 +268,24 @@ fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, 
     }
 }
 
+pub fn chunk_file(cwd: &Path, file: &Path) -> Vec<Result<Chunk, Error>> {
+    let full_path = cwd.join(file);
+    let mut input = BufReader::new(File::open(full_path).unwrap());
+    let mut chunker = Chunker::new(&mut input);
+    pre_process(&mut chunker)
+}
+
 pub fn parse_chunks(input: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
+    parse(&mut pre_process(input).into_iter())
+}
+
+pub fn pre_process(
+    input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
+) -> Vec<Result<Chunk, Error>> {
     let mut pp = input;
     let mut pp = PreProcessComments::new(&mut pp);
-    let mut pp = PreProcessMacros::new(&mut pp);
-    parse(&mut pp)
+    let pp = PreProcessMacros::new(&mut pp);
+    pp.collect()
 }
 
 #[cfg(test)]
