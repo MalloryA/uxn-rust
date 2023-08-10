@@ -42,7 +42,6 @@ impl Iterator for PreProcessIncludes<'_> {
             if let Some(Ok(chunk)) = next {
                 if let Ok(token) = Token::from_chunk(chunk.clone()) {
                     if let TokenType::Include(path) = token.token_type {
-                        println!("tt:include({:?}, {path:?})", self.cwd);
                         self.replacement = chunk_file(self.cwd, Path::new(&path));
                         continue;
                     }
