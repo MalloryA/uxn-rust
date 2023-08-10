@@ -241,7 +241,7 @@ fn parse(
                             let full_name = get_full_name(name, &parent, child);
 
                             fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
-                            position += 1;
+                            position += 2;
                         }
                         TokenType::ImmediateUnconditional(name, child) => {
                             let full_name = get_full_name(name, &parent, child);
