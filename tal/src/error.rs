@@ -36,7 +36,14 @@ impl Error {
 
         let line = line.replace('\t', &" ".repeat(8));
 
-        format!("Error: {}\n\n{}\n{}", self.message, line, arrows)
+        format!(
+            "{}:{}: Error: {}\n\n{}\n{}",
+            self.file.display(),
+            self.chunk.line + 1,
+            self.message,
+            line,
+            arrows
+        )
     }
 }
 
@@ -54,7 +61,7 @@ mod tests {
             PathBuf::from("foo.tal"),
         );
         let error_with_context = err.to_string_with_context(&mut reader);
-        let expected = "Error: Unknown token \"cat\"\n\nBAT cat\n    ^^^";
+        let expected = "foo.tal:4: Error: Unknown token \"cat\"\n\nBAT cat\n    ^^^";
         assert_eq!(error_with_context, expected,);
     }
 
@@ -71,7 +78,7 @@ mod tests {
                 + "\t[ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n",
         );
         let error_with_context = err.to_string_with_context(&mut reader);
-        let expected = "Error: could not parse AddressLiteralZeroPage\n\n        [ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n                                       ^^^^^^^";
+        let expected = "foo.tal:109: Error: could not parse AddressLiteralZeroPage\n\n        [ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n                                       ^^^^^^^";
         assert_eq!(error_with_context, expected);
     }
 
@@ -85,7 +92,7 @@ mod tests {
 
         let mut reader = Cursor::new("\n".repeat(31) + "\t\tDUP2 .center/x STZ2");
         let error_with_context = err.to_string_with_context(&mut reader);
-        let expected = "Error: could not parse AddressLiteralZeroPage\n\n                DUP2 .center/x STZ2\n                     ^^^^^^^^^";
+        let expected = "foo.tal:32: Error: could not parse AddressLiteralZeroPage\n\n                DUP2 .center/x STZ2\n                     ^^^^^^^^^";
         assert_eq!(error_with_context, expected);
     }
 }
