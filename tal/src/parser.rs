@@ -13,6 +13,7 @@ use std::fmt::Formatter;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::path::PathBuf;
 
 fn split_short(short: u16) -> (u8, u8) {
     let high: u8 = (short >> 8).try_into().unwrap();
@@ -89,7 +90,10 @@ fn get_full_name(name: String, parent: &Option<String>, child: bool) -> String {
     }
 }
 
-fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, Error> {
+fn parse(
+    file: PathBuf,
+    chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>,
+) -> Result<Rom, Error> {
     let mut position: u16 = 0x100;
 
     // Addresses, references, etc
@@ -114,7 +118,11 @@ fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, 
                         FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
                             let source = address_references.get(&name);
                             if source.is_none() {
-                                return Err(Error::new(format!("unknown name \"{name}\""), chunk));
+                                return Err(Error::new(
+                                    format!("unknown name \"{name}\""),
+                                    chunk,
+                                    file,
+                                ));
                             }
                             let mut source = *source.unwrap();
                             if relative {
@@ -128,7 +136,11 @@ fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, 
                         FillLater::Short(target, relative, relative_subtract, name, chunk) => {
                             let source = address_references.get(&name);
                             if source.is_none() {
-                                return Err(Error::new(format!("unknown name \"{name}\""), chunk));
+                                return Err(Error::new(
+                                    format!("unknown name \"{name}\""),
+                                    chunk,
+                                    file,
+                                ));
                             }
                             let mut source = *source.unwrap();
                             if relative {
@@ -147,7 +159,7 @@ fn parse(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> Result<Rom, 
             Some(chunk) => {
                 let chunk = chunk?;
                 match Token::from_chunk(chunk.clone()) {
-                    Err(err) => return Err(Error::new(err, chunk)),
+                    Err(err) => return Err(Error::new(err, chunk, file)),
                     Ok(token) => match token.token_type {
                         TokenType::Opcode(opcode) => {
                             rom.write_byte(position, opcode.as_byte());
@@ -273,24 +285,29 @@ pub fn chunk_file(cwd: &Path, file: &Path) -> Vec<Result<Chunk, Error>> {
     let full_path = cwd.join(file);
     let mut input = BufReader::new(File::open(full_path).unwrap());
     let mut chunker = Chunker::new(&mut input);
-    pre_process(&cwd, &mut chunker)
+    pre_process(&cwd, file.to_path_buf(), &mut chunker)
 }
 
 pub fn parse_chunks(
     cwd: &Path,
+    file: PathBuf,
     input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
 ) -> Result<Rom, Error> {
-    parse(&mut pre_process(&cwd, input).into_iter())
+    parse(
+        file.clone(),
+        &mut pre_process(&cwd, file.clone(), input).into_iter(),
+    )
 }
 
 pub fn pre_process(
     cwd: &Path,
+    file: PathBuf,
     input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
 ) -> Vec<Result<Chunk, Error>> {
     let mut pp = input;
-    let mut pp = PreProcessComments::new(&mut pp);
-    let mut pp = PreProcessIncludes::new(&cwd, &mut pp);
-    let pp = PreProcessMacros::new(&mut pp);
+    let mut pp = PreProcessComments::new(file.clone(), &mut pp);
+    let mut pp = PreProcessIncludes::new(file.clone(), &cwd, &mut pp);
+    let pp = PreProcessMacros::new(file, &mut pp);
     pp.collect()
 }
 
@@ -329,7 +346,7 @@ mod tests {
             Ok(Chunk::new(String::from("DEO2"), 3, 15)),
         ]
         .into_iter();
-        let result = parse_chunks(&Path::new(""), &mut chunks);
+        let result = parse_chunks(&Path::new(""), PathBuf::new(), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -355,7 +372,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&Path::new(""), &mut chunks);
+        let result = parse_chunks(&Path::new(""), PathBuf::new(), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -381,7 +398,7 @@ mod tests {
             Ok(Chunk::new(String::from("#5678"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&Path::new(""), &mut chunks);
+        let result = parse_chunks(&Path::new(""), PathBuf::new(), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -402,7 +419,7 @@ mod tests {
             Ok(Chunk::new(String::from("#1234"), 0, 12)),
         ]
         .into_iter();
-        let result = parse_chunks(&Path::new(""), &mut chunks);
+        let result = parse_chunks(&Path::new(""), PathBuf::new(), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
@@ -459,7 +476,7 @@ mod tests {
             Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let result = parse_chunks(&Path::new(""), &mut chunks);
+        let result = parse_chunks(&Path::new(""), PathBuf::new(), &mut chunks);
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);

@@ -4,8 +4,10 @@ use crate::parser::chunk_file;
 use crate::token::Token;
 use crate::token::TokenType;
 use std::path::Path;
+use std::path::PathBuf;
 
 pub struct PreProcessIncludes<'a> {
+    file: PathBuf,
     cwd: &'a Path,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     replacement: Vec<Result<Chunk, Error>>,
@@ -13,10 +15,12 @@ pub struct PreProcessIncludes<'a> {
 
 impl PreProcessIncludes<'_> {
     pub fn new<'a>(
+        file: PathBuf,
         cwd: &'a Path,
         chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     ) -> PreProcessIncludes<'a> {
         PreProcessIncludes {
+            file,
             cwd,
             chunks,
             replacement: vec![],
@@ -61,7 +65,7 @@ mod tests {
     fn it_works() {
         let cwd = current_dir().unwrap().join("tests/roms");
         let mut source = vec![Ok(Chunk::new(String::from("~hello.tal"), 0, 0))].into_iter();
-        let mut pp = PreProcessIncludes::new(&cwd, &mut source);
+        let mut pp = PreProcessIncludes::new(PathBuf::new(), &cwd, &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("|0100"), 1, 0))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 6))));
@@ -75,7 +79,7 @@ mod tests {
     fn includes_inside_includes_work() {
         let cwd = current_dir().unwrap().join("tests/roms");
         let mut source = vec![Ok(Chunk::new(String::from("~hello-include.tal"), 0, 0))].into_iter();
-        let mut pp = PreProcessIncludes::new(&cwd, &mut source);
+        let mut pp = PreProcessIncludes::new(PathBuf::new(), &cwd, &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("|0100"), 1, 0))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 6))));

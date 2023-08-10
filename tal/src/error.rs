@@ -1,15 +1,21 @@
 use crate::chunker::Chunk;
 use std::io::BufRead;
+use std::path::PathBuf;
 
 #[derive(Debug, PartialEq)]
 pub struct Error {
     message: String,
     chunk: Chunk,
+    file: PathBuf,
 }
 
 impl Error {
-    pub fn new(message: String, chunk: Chunk) -> Error {
-        Error { message, chunk }
+    pub fn new(message: String, chunk: Chunk, file: PathBuf) -> Error {
+        Error {
+            message,
+            chunk,
+            file,
+        }
     }
 
     pub fn to_string_with_context(&self, reader: &mut dyn BufRead) -> String {
@@ -45,6 +51,7 @@ mod tests {
         let err = Error::new(
             "Unknown token \"cat\"".to_string(),
             Chunk::new("cat".to_string(), 3, 4),
+            PathBuf::from("foo.tal"),
         );
         let error_with_context = err.to_string_with_context(&mut reader);
         let expected = "Error: Unknown token \"cat\"\n\nBAT cat\n    ^^^";
@@ -56,6 +63,7 @@ mod tests {
         let err = Error {
             message: "could not parse AddressLiteralZeroPage".to_string(),
             chunk: Chunk::new(".octave".to_string(), 108, 32),
+            file: PathBuf::from("foo.tal"),
         };
 
         let mut reader = Cursor::new(
@@ -72,6 +80,7 @@ mod tests {
         let err = Error {
             message: "could not parse AddressLiteralZeroPage".to_string(),
             chunk: Chunk::new(".center/x".to_string(), 31, 7),
+            file: PathBuf::from("foo.tal"),
         };
 
         let mut reader = Cursor::new("\n".repeat(31) + "\t\tDUP2 .center/x STZ2");

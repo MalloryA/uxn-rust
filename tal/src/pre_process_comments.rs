@@ -2,15 +2,21 @@ use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::token::Token;
 use crate::token::TokenType;
+use std::path::PathBuf;
 
 pub struct PreProcessComments<'a> {
+    file: PathBuf,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     comment_start: Option<Chunk>,
 }
 
 impl PreProcessComments<'_> {
-    pub fn new(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> PreProcessComments {
+    pub fn new(
+        file: PathBuf,
+        chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>,
+    ) -> PreProcessComments {
         PreProcessComments {
+            file,
             chunks,
             comment_start: None,
         }
@@ -50,6 +56,7 @@ impl Iterator for PreProcessComments<'_> {
                 return Some(Err(Error::new(
                     "reached EOF without finding comment close".to_string(),
                     self.comment_start.clone().unwrap(),
+                    self.file.clone(),
                 )));
             }
 
@@ -72,7 +79,7 @@ mod tests {
             Ok(Chunk::new(String::from("dog"), 0, 0)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut source);
+        let mut pp = PreProcessComments::new(PathBuf::new(), &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("cat"), 0, 0))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("dog"), 0, 0))));
@@ -88,14 +95,15 @@ mod tests {
             Ok(Chunk::new(String::from("dog"), 0, 0)),
         ]
         .into_iter();
-        let mut pp = PreProcessComments::new(&mut source);
+        let mut pp = PreProcessComments::new(PathBuf::new(), &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("cat"), 0, 0))));
         assert_eq!(
             pp.next(),
             Some(Err(Error::new(
                 "reached EOF without finding comment close".to_string(),
-                Chunk::new("(".to_string(), 0, 0)
+                Chunk::new("(".to_string(), 0, 0),
+                PathBuf::new(),
             )))
         );
     }

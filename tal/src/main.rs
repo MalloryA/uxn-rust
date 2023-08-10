@@ -19,14 +19,16 @@ use std::fs::OpenOptions;
 use std::io::BufReader;
 use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::exit;
 
 fn read_and_write(
     cwd: &Path,
+    file: PathBuf,
     writer: &mut dyn Write,
     chunker: Vec<Result<Chunk, Error>>,
 ) -> Result<(), Error> {
-    match parse_chunks(&cwd, &mut chunker.into_iter()) {
+    match parse_chunks(&cwd, file, &mut chunker.into_iter()) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => panic!("{:?}", err),
@@ -55,7 +57,7 @@ fn main() {
         .open(output_path)
         .unwrap();
     let chunks = chunk_file(&cwd, input_path);
-    let result = read_and_write(&cwd, &mut output, chunks);
+    let result = read_and_write(&cwd, input_path.to_path_buf(), &mut output, chunks);
     match result {
         Ok(_) => println!("OK"),
         Err(err) => {
@@ -81,8 +83,8 @@ mod tests {
         let expected: Vec<u8> = vec![0x80, 0x68, 0x80, 0x18, 0x17];
 
         let mut chunker = Chunker::new(&mut input);
-        let chunks = pre_process(&Path::new(""), &mut chunker);
-        let result = read_and_write(&Path::new(""), &mut output, chunks);
+        let chunks = pre_process(&Path::new(""), PathBuf::new(), &mut chunker);
+        let result = read_and_write(&Path::new(""), PathBuf::new(), &mut output, chunks);
         assert!(result.is_ok());
         println!("{output:?}");
         let actual = output.into_inner();
