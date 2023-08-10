@@ -7,6 +7,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 pub struct PreProcessIncludes<'a> {
+    #[allow(dead_code)]
     file: PathBuf,
     cwd: &'a Path,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,

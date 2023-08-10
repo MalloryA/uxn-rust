@@ -13,6 +13,7 @@ enum MacroState {
 }
 
 pub struct PreProcessMacros<'a> {
+    #[allow(dead_code)]
     file: PathBuf,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     macro_state: MacroState,
