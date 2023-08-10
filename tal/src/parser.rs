@@ -231,10 +231,16 @@ fn parse(
                             fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
                             position += 1;
                         }
-                        TokenType::AddressRawAbsolute(name, child) => {
+                        TokenType::AddressRawAbsoluteByte(name, child) => {
                             let full_name = get_full_name(name, &parent, child);
 
                             fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                            position += 1;
+                        }
+                        TokenType::AddressRawAbsoluteShort(name, child) => {
+                            let full_name = get_full_name(name, &parent, child);
+
+                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
                             position += 1;
                         }
                         TokenType::ImmediateUnconditional(name, child) => {

@@ -22,7 +22,8 @@ pub enum TokenType {
     ImmediateConditional(String, bool),
     ImmediateUnconditional(String, bool),
     AddressLiteralRelative(String, bool),
-    AddressRawAbsolute(String, bool),
+    AddressRawAbsoluteByte(String, bool),
+    AddressRawAbsoluteShort(String, bool),
     MacroDefinition(String),
     MacroOpen,
     MacroClose,
@@ -152,12 +153,12 @@ impl TokenType {
                 Some(TokenType::AddressLiteralAbsolute(name.to_string(), child))
             }
 
-            ":" => {
+            ":" | "=" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
                 if name.is_empty() {
-                    return Err("could not parse AddressRawAbsolute".to_string());
+                    return Err("could not parse AddressRawAbsoluteShort".to_string());
                 }
-                Some(TokenType::AddressRawAbsolute(name.to_string(), child))
+                Some(TokenType::AddressRawAbsoluteShort(name.to_string(), child))
             }
 
             "," => {
@@ -171,9 +172,9 @@ impl TokenType {
             "-" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
                 if name.is_empty() {
-                    return Err("could not parse AddressRawAbsolute".to_string());
+                    return Err("could not parse AddressRawAbsoluteByte".to_string());
                 }
-                Some(TokenType::AddressRawAbsolute(name.to_string(), child))
+                Some(TokenType::AddressRawAbsoluteByte(name.to_string(), child))
             }
 
             "!" => {
@@ -438,19 +439,19 @@ mod tests {
     fn address_raw_absolute_works() {
         assert_match!(
             ":foo-bar",
-            TokenType::AddressRawAbsolute("foo-bar".to_string(), false)
+            TokenType::AddressRawAbsoluteShort("foo-bar".to_string(), false)
         );
         assert_match!(
             ":&foo-bar",
-            TokenType::AddressRawAbsolute("foo-bar".to_string(), true)
+            TokenType::AddressRawAbsoluteShort("foo-bar".to_string(), true)
         );
         assert_match!(
             "-foo-bar",
-            TokenType::AddressRawAbsolute("foo-bar".to_string(), false)
+            TokenType::AddressRawAbsoluteByte("foo-bar".to_string(), false)
         );
         assert_match!(
             "-&foo-bar",
-            TokenType::AddressRawAbsolute("foo-bar".to_string(), true)
+            TokenType::AddressRawAbsoluteByte("foo-bar".to_string(), true)
         );
     }
 
