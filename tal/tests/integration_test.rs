@@ -131,6 +131,23 @@ fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Resu
     expect_eq_files(tmp, rom)
 }
 
+fn expect_unsuccessful_assembly(cwd: &PathBuf, tal: PathBuf) -> Result<(), String> {
+    println!("tal {}", relative(&cwd, &tal));
+    let tmp = temp_dir().join("tal-test.rom");
+
+    let result = Command::new(root_dir().join("target/debug/tal"))
+        .arg(tal)
+        .arg(tmp.clone())
+        .current_dir(cwd)
+        .status();
+    expect(result.is_ok(), format!("Command failed"))?;
+    let status = result.unwrap();
+    expect(
+        !status.success(),
+        format!("got 0 exit code when expected failure"),
+    )
+}
+
 fn root_dir() -> PathBuf {
     current_exe()
         .unwrap()
@@ -140,9 +157,11 @@ fn root_dir() -> PathBuf {
         .to_path_buf()
 }
 
-fn find_all_rom_files(path: &PathBuf) -> Vec<PathBuf> {
+// Returns (tal_files_with_roms, tal_files_without_roms)
+fn find_tal_files(path: &PathBuf) -> (Vec<PathBuf>, Vec<PathBuf>) {
     let mut directories = vec![path.clone()];
-    let mut files = vec![];
+    let mut tal_files_with_roms = vec![];
+    let mut tal_files_without_roms = vec![];
 
     while !directories.is_empty() {
         let dir_path = directories.pop().unwrap();
@@ -152,42 +171,80 @@ fn find_all_rom_files(path: &PathBuf) -> Vec<PathBuf> {
             let file = result.unwrap();
             if file.metadata().unwrap().is_dir() {
                 directories.push(file.path());
-            } else if file.path().extension().unwrap().to_str().unwrap() == "rom" {
-                files.push(file.path());
+            } else if file.path().extension().unwrap().to_str().unwrap() == "tal" {
+                let rom_path = file.path().with_extension("rom");
+                if rom_path.exists() {
+                    tal_files_with_roms.push(file.path());
+                } else {
+                    tal_files_without_roms.push(file.path());
+                }
             }
         }
     }
 
-    files
+    (tal_files_with_roms, tal_files_without_roms)
 }
 
 #[test]
 fn it_works() {
     let path = root_dir().join("tal/tests/roms");
-    let roms = find_all_rom_files(&path);
+    let (tal_files_with_roms, tal_files_without_roms) = find_tal_files(&path);
 
-    let mut results = vec![];
+    let mut results_expect_successful = vec![];
+    let mut results_expect_unsuccessful = vec![];
 
-    for rom_path in roms {
-        let relative_path = relative(&path, &rom_path);
-        let tal_path = rom_path.with_extension("tal");
+    for tal_path in tal_files_with_roms {
+        let relative_path = relative(&path, &tal_path);
+        let rom_path = tal_path.with_extension("rom");
         let result = expect_successful_assembly(&path, tal_path, rom_path.clone());
-        results.push((relative_path, result));
+        results_expect_successful.push((relative_path, result));
     }
 
-    let succeeded = results.iter().filter(|r| r.1.is_ok()).count();
-    let total = results.len();
+    for tal_path in tal_files_without_roms {
+        let relative_path = relative(&path, &tal_path);
+        let result = expect_unsuccessful_assembly(&path, tal_path);
+        results_expect_unsuccessful.push((relative_path, result));
+    }
+
+    let expected_succeeded = results_expect_successful
+        .iter()
+        .filter(|r| r.1.is_ok())
+        .count();
+    let total_expect_successful = results_expect_successful.len();
+    let expected_unsucceeded = results_expect_unsuccessful
+        .iter()
+        .filter(|r| r.1.is_ok())
+        .count();
+    let total_expect_unsuccessful = results_expect_unsuccessful.len();
 
     let mut fail = false;
-    for result in results {
+    for result in results_expect_successful {
         if result.1.is_ok() {
-            println!("SUCCESS {}", result.0);
+            println!("expecting success... got SUCCESS {}", result.0);
         } else {
             fail = true;
-            println!("FAIL    {} - {}", result.0, result.1.unwrap_err());
+            println!(
+                "expecting success... got FAIL    {} - {}",
+                result.0,
+                result.1.unwrap_err()
+            );
         }
     }
-    println!("{succeeded}/{total} succeeded");
+    for result in results_expect_unsuccessful {
+        if result.1.is_ok() {
+            println!("expecting failure... got FAIL    {}", result.0);
+        } else {
+            fail = true;
+            println!(
+                "expecting failure... got SUCCESS {} - {}",
+                result.0,
+                result.1.unwrap_err()
+            );
+        }
+    }
+
+    println!("{expected_succeeded}/{total_expect_successful} expected to succeed succeeded");
+    println!("{expected_unsucceeded}/{total_expect_unsuccessful} expected to fail failed");
     if fail {
         panic!("1 or more tests failed");
     }
