@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::fs::read;
 use std::fs::read_dir;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -35,7 +36,7 @@ impl Rom {
 impl Debug for Rom {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         f.write_str("File contents:\n")?;
-        for (i, byte) in self.get_bytes().into_iter().enumerate() {
+        for (i, byte) in self.get_bytes().iter().enumerate() {
             if i != 0 {
                 if i % 16 == 0 {
                     f.write_str("\n")?;
@@ -110,13 +111,13 @@ fn expect_eq_files(left: PathBuf, right: PathBuf) -> Result<(), String> {
     expect_eq_rom(_left, _right)
 }
 
-fn relative(root: &PathBuf, file: &PathBuf) -> String {
+fn relative(root: &Path, file: &Path) -> String {
     let len = root.display().to_string().len() + 1;
-    (&file.display().to_string()[len..]).to_string()
+    file.display().to_string()[len..].to_string()
 }
 
 fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Result<(), String> {
-    println!("tal {} {}", relative(&cwd, &tal), relative(&cwd, &rom));
+    println!("tal {} {}", relative(cwd, &tal), relative(cwd, &rom));
     let tmp = temp_dir().join("tal-test.rom");
 
     let result = Command::new(root_dir().join("target/debug/tal"))
@@ -124,7 +125,7 @@ fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Resu
         .arg(tmp.clone())
         .current_dir(cwd)
         .status();
-    expect(result.is_ok(), format!("Command failed"))?;
+    expect(result.is_ok(), "Command failed".to_string())?;
     let status = result.unwrap();
     expect(status.success(), format!("exit code: {:?}", status.code()))?;
 
@@ -132,7 +133,7 @@ fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Resu
 }
 
 fn expect_unsuccessful_assembly(cwd: &PathBuf, tal: PathBuf) -> Result<(), String> {
-    println!("tal {}", relative(&cwd, &tal));
+    println!("tal {}", relative(cwd, &tal));
     let tmp = temp_dir().join("tal-test.rom");
 
     let result = Command::new(root_dir().join("target/debug/tal"))
@@ -140,11 +141,11 @@ fn expect_unsuccessful_assembly(cwd: &PathBuf, tal: PathBuf) -> Result<(), Strin
         .arg(tmp.clone())
         .current_dir(cwd)
         .status();
-    expect(result.is_ok(), format!("Command failed"))?;
+    expect(result.is_ok(), "Command failed".to_string())?;
     let status = result.unwrap();
     expect(
         !status.success(),
-        format!("got 0 exit code when expected failure"),
+        "got 0 exit code when expected failure".to_string(),
     )
 }
 
@@ -158,14 +159,12 @@ fn root_dir() -> PathBuf {
 }
 
 // Returns (tal_files_with_roms, tal_files_without_roms)
-fn find_tal_files(path: &PathBuf) -> (Vec<PathBuf>, Vec<PathBuf>) {
-    let mut directories = vec![path.clone()];
+fn find_tal_files(path: &Path) -> (Vec<PathBuf>, Vec<PathBuf>) {
+    let mut directories = vec![path.to_path_buf()];
     let mut tal_files_with_roms = vec![];
     let mut tal_files_without_roms = vec![];
 
-    while !directories.is_empty() {
-        let dir_path = directories.pop().unwrap();
-
+    while let Some(dir_path) = directories.pop() {
         let dir = read_dir(dir_path).unwrap();
         for result in dir {
             let file = result.unwrap();

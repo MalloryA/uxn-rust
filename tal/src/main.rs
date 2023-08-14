@@ -28,7 +28,7 @@ fn read_and_write(
     writer: &mut dyn Write,
     chunker: Vec<Result<Chunk, Error>>,
 ) -> Result<(), Error> {
-    match parse_chunks(&cwd, file, &mut chunker.into_iter()) {
+    match parse_chunks(cwd, file, &mut chunker.into_iter()) {
         Ok(rom) => match writer.write_all(rom.get_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => panic!("{:?}", err),
@@ -83,8 +83,8 @@ mod tests {
         let expected: Vec<u8> = vec![0x80, 0x68, 0x80, 0x18, 0x17];
 
         let mut chunker = Chunker::new(&mut input);
-        let chunks = pre_process(&Path::new(""), PathBuf::new(), &mut chunker);
-        let result = read_and_write(&Path::new(""), PathBuf::new(), &mut output, chunks);
+        let chunks = pre_process(Path::new(""), PathBuf::new(), &mut chunker);
+        let result = read_and_write(Path::new(""), PathBuf::new(), &mut output, chunks);
         assert!(result.is_ok());
         println!("{output:?}");
         let actual = output.into_inner();
