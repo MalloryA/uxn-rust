@@ -116,11 +116,7 @@ impl TokenType {
 
             "&" => {
                 let value = chunk.value[1..].to_string();
-                if value.is_empty() {
-                    return Err("empty label child".to_string());
-                } else {
-                    Some(TokenType::LabelChild(value))
-                }
+                Some(TokenType::LabelChild(value))
             }
 
             "#" => {
@@ -175,9 +171,6 @@ impl TokenType {
 
             "!" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse ImmediateUnconditional".to_string());
-                }
                 Some(TokenType::ImmediateUnconditional(name.to_string(), child))
             }
 
@@ -333,11 +326,7 @@ mod tests {
     #[test]
     fn label_child_works() {
         assert_match!("&vector", TokenType::LabelChild("vector".to_string()));
-    }
-
-    #[test]
-    fn label_child_fails() {
-        assert_err!("&");
+        assert_match!("&", TokenType::LabelChild("".to_string()));
     }
 
     #[test]
