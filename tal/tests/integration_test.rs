@@ -124,10 +124,13 @@ fn expect_successful_assembly(cwd: &PathBuf, tal: PathBuf, rom: PathBuf) -> Resu
         .arg(tal)
         .arg(tmp.clone())
         .current_dir(cwd)
-        .status();
+        .output();
     expect(result.is_ok(), "Command failed".to_string())?;
-    let status = result.unwrap();
-    expect(status.success(), format!("exit code: {:?}", status.code()))?;
+    let cmd = result.unwrap();
+    expect(
+        cmd.status.success(),
+        format!("exit code: {:?}", cmd.status.code()),
+    )?;
 
     expect_eq_files(tmp, rom)
 }
@@ -140,11 +143,11 @@ fn expect_unsuccessful_assembly(cwd: &PathBuf, tal: PathBuf) -> Result<(), Strin
         .arg(tal)
         .arg(tmp.clone())
         .current_dir(cwd)
-        .status();
+        .output();
     expect(result.is_ok(), "Command failed".to_string())?;
-    let status = result.unwrap();
+    let cmd = result.unwrap();
     expect(
-        !status.success(),
+        !cmd.status.success(),
         "got 0 exit code when expected failure".to_string(),
     )
 }
