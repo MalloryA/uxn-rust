@@ -269,8 +269,7 @@ fn parse(
                             let full_name = get_full_name(name, &parent, true);
                             address_references.insert(full_name, position);
                         }
-                        TokenType::MacroOrInstant(name) => {
-                            // TODO: Assume instant (JSI)
+                        TokenType::Instant(name) => {
                             rom.write_byte(position, Opcode::JSI.as_byte());
                             position += 1;
                             fill_later.push(FillLater::Short(position, true, 2, name, chunk));
@@ -279,7 +278,6 @@ fn parse(
                         TokenType::Bracket => {
                             // Ignore
                         }
-                        _ => todo!("{:?}", token),
                     },
                 }
             }

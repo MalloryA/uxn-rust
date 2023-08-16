@@ -3,7 +3,7 @@ use crate::opcode::Opcode;
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
-    MacroOrInstant(String),
+    Instant(String),
     Opcode(Opcode),
     RawByte(u8),
     RawShort(u16),
@@ -22,9 +22,6 @@ pub enum TokenType {
     AddressLiteralRelative(String, bool),
     AddressRawAbsoluteByte(String, bool),
     AddressRawAbsoluteShort(String, bool),
-    MacroDefinition(String),
-    MacroOpen,
-    MacroClose,
 }
 
 impl TokenType {
@@ -33,8 +30,6 @@ impl TokenType {
 
         let token_type = match chunk.value.as_str() {
             "[" | "]" => Some(TokenType::Bracket),
-            "{" => Some(TokenType::MacroOpen),
-            "}" => Some(TokenType::MacroClose),
             _ => None,
         };
         if let Some(tt) = token_type {
@@ -181,14 +176,6 @@ impl TokenType {
                 Some(TokenType::ImmediateConditional(name.to_string(), child))
             }
 
-            "%" => {
-                let name = &chunk.value[1..];
-                if name.is_empty() {
-                    return Err("could not parse MacroDefinition".to_string());
-                }
-                Some(TokenType::MacroDefinition(name.to_string()))
-            }
-
             _ => None,
         };
         if let Some(tt) = token_type {
@@ -197,7 +184,7 @@ impl TokenType {
 
         // Default assumption
 
-        Ok(TokenType::MacroOrInstant(chunk.value.clone()))
+        Ok(TokenType::Instant(chunk.value.clone()))
     }
 }
 
@@ -274,7 +261,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_match!("cat", TokenType::MacroOrInstant(String::from("cat")));
+        assert_match!("cat", TokenType::Instant(String::from("cat")));
         assert_match!("DUP", TokenType::Opcode(Opcode::DUP(false, false, false)));
         assert_match!("DUP2kr", TokenType::Opcode(Opcode::DUP(true, true, true)));
         assert_match!("12", TokenType::RawByte(0x12));
@@ -350,7 +337,7 @@ mod tests {
         let result = Token::from_chunk(chunk);
         assert_eq!(
             result.unwrap().token_type,
-            TokenType::MacroOrInstant("A".to_string())
+            TokenType::Instant("A".to_string())
         );
     }
 
@@ -367,7 +354,7 @@ mod tests {
         let result = Token::from_chunk(chunk);
         assert_eq!(
             result.unwrap().token_type,
-            TokenType::MacroOrInstant("ABC".to_string())
+            TokenType::Instant("ABC".to_string())
         );
     }
 
@@ -442,25 +429,5 @@ mod tests {
     #[test]
     fn opcode_takes_precidence_over_raw_short() {
         assert_match!("ADD2", TokenType::Opcode(Opcode::ADD(true, false, false)));
-    }
-
-    #[test]
-    fn macro_definition_works() {
-        assert_match!("%EMIT", TokenType::MacroDefinition("EMIT".to_string()));
-    }
-
-    #[test]
-    fn macro_definition_fails() {
-        assert_err!("%");
-    }
-
-    #[test]
-    fn macro_open_works() {
-        assert_match!("{", TokenType::MacroOpen);
-    }
-
-    #[test]
-    fn macro_close_works() {
-        assert_match!("}", TokenType::MacroClose);
     }
 }

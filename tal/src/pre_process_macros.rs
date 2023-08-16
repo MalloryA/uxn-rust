@@ -1,9 +1,26 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
-use crate::token::Token;
-use crate::token::TokenType;
 use std::collections::HashMap;
 use std::path::PathBuf;
+
+#[derive(PartialEq)]
+enum MacroToken {
+    MacroDefinition(String),
+    MacroStart,
+    MacroEnd,
+    Other,
+}
+
+impl MacroToken {
+    fn from_chunk(chunk: &Chunk) -> MacroToken {
+        match &chunk.value[0..1] {
+            "%" => MacroToken::MacroDefinition(chunk.value[1..].to_string()),
+            "{" => MacroToken::MacroStart,
+            "}" => MacroToken::MacroEnd,
+            _ => MacroToken::Other,
+        }
+    }
+}
 
 #[allow(clippy::enum_variant_names)]
 enum MacroState {
@@ -48,45 +65,44 @@ impl Iterator for PreProcessMacros<'_> {
             };
 
             if let Some(Ok(chunk)) = next {
-                if let Ok(token) = Token::from_chunk(chunk.clone()) {
-                    match &self.macro_state {
-                        MacroState::WaitingForName => {
-                            if let TokenType::MacroDefinition(name) = token.token_type {
-                                self.macro_state = MacroState::WaitingForOpen(name.clone());
-                                continue;
-                            } else if let TokenType::MacroOrInstant(name) = token.token_type {
-                                if let Some(definition) = self.macro_definitions.get(&name) {
-                                    // We found a macro definition for this name
-                                    // So prepend the definition to the current replacement vec
-                                    self.replacement.splice(0..0, definition.to_vec());
-                                    continue;
-                                } else {
-                                    // We didn't find a macro definition for this name
-                                    // So treat it like it's an instant invocation and allow it to
-                                    // pass through instead
-                                }
-                            }
-                        }
-                        MacroState::WaitingForOpen(name) => {
-                            if token.token_type == TokenType::MacroOpen {
-                                self.macro_definitions.insert(name.clone(), vec![]);
-                                self.macro_state = MacroState::WaitingForClose(name.clone());
-                                continue;
-                            }
-                        }
-                        MacroState::WaitingForClose(name) => {
-                            if token.token_type == TokenType::MacroClose {
-                                self.macro_state = MacroState::WaitingForName;
+                let token = MacroToken::from_chunk(&chunk);
+                match &self.macro_state {
+                    MacroState::WaitingForName => {
+                        if let MacroToken::MacroDefinition(name) = token {
+                            self.macro_state = MacroState::WaitingForOpen(name.clone());
+                            continue;
+                        } else if token == MacroToken::Other {
+                            if let Some(definition) = self.macro_definitions.get(&chunk.value) {
+                                // We found a macro definition for this name
+                                // So prepend the definition to the current replacement vec
+                                self.replacement.splice(0..0, definition.to_vec());
                                 continue;
                             } else {
-                                let mut current_macro = vec![];
-                                for chunk in self.macro_definitions.get(name).unwrap() {
-                                    current_macro.push(chunk.clone());
-                                }
-                                current_macro.push(chunk.clone());
-                                self.macro_definitions.insert(name.clone(), current_macro);
-                                continue;
+                                // We didn't find a macro definition for this name
+                                // So treat it like it's an instant invocation and allow it to
+                                // pass through instead
                             }
+                        }
+                    }
+                    MacroState::WaitingForOpen(name) => {
+                        if token == MacroToken::MacroStart {
+                            self.macro_definitions.insert(name.clone(), vec![]);
+                            self.macro_state = MacroState::WaitingForClose(name.clone());
+                            continue;
+                        }
+                    }
+                    MacroState::WaitingForClose(name) => {
+                        if token == MacroToken::MacroEnd {
+                            self.macro_state = MacroState::WaitingForName;
+                            continue;
+                        } else {
+                            let mut current_macro = vec![];
+                            for chunk in self.macro_definitions.get(name).unwrap() {
+                                current_macro.push(chunk.clone());
+                            }
+                            current_macro.push(chunk.clone());
+                            self.macro_definitions.insert(name.clone(), current_macro);
+                            continue;
                         }
                     }
                 }
