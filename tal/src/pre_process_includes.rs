@@ -1,10 +1,23 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::parser::chunk_file;
-use crate::token::Token;
-use crate::token::TokenType;
 use std::path::Path;
 use std::path::PathBuf;
+
+#[derive(PartialEq)]
+enum IncludeToken {
+    Include(String),
+    Other,
+}
+
+impl IncludeToken {
+    fn from_chunk(chunk: &Chunk) -> IncludeToken {
+        match &chunk.value[0..1] {
+            "~" => IncludeToken::Include(chunk.value[1..].to_string()),
+            _ => IncludeToken::Other,
+        }
+    }
+}
 
 pub struct PreProcessIncludes<'a> {
     #[allow(dead_code)]
@@ -41,11 +54,9 @@ impl Iterator for PreProcessIncludes<'_> {
             };
 
             if let Some(Ok(chunk)) = next {
-                if let Ok(token) = Token::from_chunk(chunk.clone()) {
-                    if let TokenType::Include(path) = token.token_type {
-                        self.replacement = chunk_file(self.cwd, Path::new(&path));
-                        continue;
-                    }
+                if let IncludeToken::Include(path) = IncludeToken::from_chunk(&chunk) {
+                    self.replacement = chunk_file(self.cwd, Path::new(&path));
+                    continue;
                 }
 
                 return Some(Ok(chunk));

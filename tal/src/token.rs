@@ -25,7 +25,6 @@ pub enum TokenType {
     MacroDefinition(String),
     MacroOpen,
     MacroClose,
-    Include(String),
 }
 
 impl TokenType {
@@ -188,14 +187,6 @@ impl TokenType {
                     return Err("could not parse MacroDefinition".to_string());
                 }
                 Some(TokenType::MacroDefinition(name.to_string()))
-            }
-
-            "~" => {
-                let name = &chunk.value[1..];
-                if name.is_empty() {
-                    return Err("could not parse Include".to_string());
-                }
-                Some(TokenType::Include(name.to_string()))
             }
 
             _ => None,
@@ -471,18 +462,5 @@ mod tests {
     #[test]
     fn macro_close_works() {
         assert_match!("}", TokenType::MacroClose);
-    }
-
-    #[test]
-    fn include_works() {
-        assert_match!(
-            "~foo/bar.tal",
-            TokenType::Include("foo/bar.tal".to_string())
-        );
-    }
-
-    #[test]
-    fn include_fails() {
-        assert_err!("~");
     }
 }
