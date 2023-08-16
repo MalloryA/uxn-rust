@@ -307,10 +307,10 @@ JMP2r
 @update-cursor ( color addr* -- )
 
 	[ LIT2 00 -Screen/auto ] DEO
+	.Screen/addr DEO2
 	#40 draw-cursor
 	.Mouse/x DEI2 ,draw-cursor/x STR2
 	.Mouse/y DEI2 ,draw-cursor/y STR2
-	.Screen/addr DEO2
 
 @draw-cursor ( color -- )
 

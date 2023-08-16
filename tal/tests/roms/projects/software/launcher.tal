@@ -175,11 +175,11 @@ JMP2r
 		POP JMP2r
 		&valid
 
-	#00 ;draw-browser JSR2
+	clear-browser
 	DUP .browser/sel STZ
 	DUP .browser/last STZ
 		#30 ADD .Audio0/pitch DEO
-	#01 ;draw-browser JSR2
+	draw-browser
 
 	( draw mascot )
 	#0010 #0010 #0060 #0060
@@ -222,9 +222,9 @@ JMP2r
 	SUB INC STHkr GTH ,&valid-scroll JCN
 		POPr JMP2r
 		&valid-scroll
-	#00 ;draw-browser JSR2
+	clear-browser
 	STHr .browser/scroll STZ
-	#01 ;draw-browser JSR2
+	draw-browser
 
 JMP2r
 
@@ -266,18 +266,24 @@ JMP2r
 
 JMP2r
 
+@clear-browser ( -- )
+
+	#0000
+	DUP2 .Screen/x DEO2
+	.Screen/y DEO2
+	#80 .Screen/pixel DEO
+
+JMP2r
+
 @draw-browser ( mask -- )
 
 	( when empty )
 	.browser/lines LDZ #01 EQU ;draw-browser-empty JCN2
 
-	STH
-
 	( draw hand )
 	.browser/x LDZ2 #0018 SUB2 .browser/y LDZ2
 	.browser/sel LDZ .browser/scroll LDZ SUB #00 SWP #40 SFT2 ADD2
-	#0010 #0010
-		;hand-icn STHkr #10 SFT ;draw-icn JSR2
+	#0010 #0010 ;hand-icn #02 ;draw-icn JSR2
 	( draw files )
 	.browser/y2 LDZ2 .browser/y LDZ2 SUB2 #04 SFT2 NIP #00
 	&loop
@@ -288,12 +294,10 @@ JMP2r
 		#00 OVR #40 SFT2 .browser/y LDZ2 ADD2 .Screen/y DEO2
 		DUP .browser/scroll LDZ ADD ;get-entry JSR2
 			DUP2 ;get-type JSR2 ;draw-type JSR2
-			#01 STHkr MUL ;draw-str JSR2
+			#01 ;draw-str JSR2
 		INC GTHk ,&loop JCN
 		&end
 	POP2
-
-	POPr
 
 JMP2r
 

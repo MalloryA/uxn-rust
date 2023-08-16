@@ -25,29 +25,9 @@
 	.System/rst DEI ,&rst-loop JCN
 
 	( clear screen )
-	#01 .Screen/auto DEO
-	#0000 .Screen/y DEO2
-	.Screen/width DEI2 #0007 ADD2 #03 SFT2 #ffff MUL2 STH2
-	&screen-yloop
-		#0000 .Screen/x DEO2
-		STH2kr
-		&screen-xloop-bg
-			#00 .Screen/sprite DEO
-			INC2
-			ORAk ,&screen-xloop-bg JCN
-		POP2
-		#0000 .Screen/x DEO2
-		STH2kr
-		&screen-xloop-fg
-			#40 .Screen/sprite DEO
-			INC2
-			ORAk ,&screen-xloop-fg JCN
-		POP2
-		.Screen/y DEI2 #0008 ADD2
-		DUP2 .Screen/y DEO2
-		.Screen/height DEI2 LTH2 ,&screen-yloop JCN
-	POP2r
-	#00 .Screen/auto DEO
+	#0000 DUP2 .Screen/x DEO2 .Screen/y DEO2
+	#80 .Screen/pixel DEO
+	#c0 .Screen/pixel DEO
 
 	( reset device vectors )
 	LIT2r 0000 #00

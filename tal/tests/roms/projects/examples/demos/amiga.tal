@@ -76,12 +76,14 @@ JMP2r
 	( clear )
 	.ball/x LDZ2 .Screen/x DEO2
 	.ball/y LDZ2 .Screen/y DEO2
-	[ LIT2 76 -Screen/auto ] DEO
+	;fill-icn .Screen/addr DEO2
+	[ LIT2 71 -Screen/auto ] DEO
 	#f8
 	&loop-bg
 		[ LIT2 40 -Screen/sprite ] DEO
 		INC DUP ?&loop-bg
 	POP
+	[ LIT2 76 -Screen/auto ] DEO
 	.ball/vx LDZ2k STH2k ROT STZ2
 	.ball/x LDZ2k STH2r ADD2 check-flip-vx ROT STZ2
 	.timer LDZk INC DUP ROT STZ #06 EQU ?&pull
@@ -189,6 +191,8 @@ JMP2r
 (
 @|assets )
 
+@fill-icn
+	ffff ffff ffff ffff
 @hor-icn
 	0000 0000 0000 00ff
 @ver-icn

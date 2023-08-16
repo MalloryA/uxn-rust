@@ -75,7 +75,7 @@ BRK
 		( top )
 	[ LDA2k ] #05 SFT2 .Screen/x DEO2
 	[ INC2k INC2 LDA2 ] #05 SFT2 .Screen/y DEO2
-	#00 draw-sprite
+	clear-sprite
 
 	( move the sprite by its velocity )
 	[ LDA2k ] [ OVR2 #0004 ADD2 LDA2 ] ADD2 OVR2 STA2
@@ -110,15 +110,19 @@ BRK
 	( top )
 	[ LDA2k ] #05 SFT2 .Screen/x DEO2
 	[ INC2 INC2 LDA2 ] #05 SFT2 .Screen/y DEO2
-	#85 
-
-( >> )
-
-@draw-sprite ( color -- )
-
+	( draw )
 	[ LIT2 15 -Screen/auto ] DEO
 	;bunny-chr .Screen/addr DEO2
-	.Screen/sprite DEO
+	#85 .Screen/sprite DEO
+	[ LIT2 00 -Screen/auto ] DEO
+
+JMP2r
+
+@clear-sprite ( -- )
+
+	[ LIT2 11 -Screen/auto ] DEO
+	;fill-icn .Screen/addr DEO2
+	#00 .Screen/sprite DEO
 	[ LIT2 00 -Screen/auto ] DEO
 
 JMP2r
@@ -190,7 +194,7 @@ JMP2r
 	[ LDA2k ] #05 SFT2 .Screen/x DEO2
 	[ INC2k INC2 LDA2 ] #05 SFT2 .Screen/y DEO2
 	( clear )
-	#00 draw-sprite
+	clear-sprite
 	POP2
 	#0001 SUB2 DUP2 ;sprite/length STA2
 	( update label )
@@ -262,6 +266,8 @@ JMP2r
 	6666 3c18 3c66 6600 6666 663c 1818 1800
 	7e06 0c18 3060 7e00 7860 6060 6060 7800
 
+@fill-icn
+	ffff ffff ffff ffff
 @bunny-chr
 	2466 6600 2424 003c 4200 007e 7e7e 7e7e
 	1818 3c3c 1800 0000 ff66 4242 667e 4242
