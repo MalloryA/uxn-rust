@@ -11,8 +11,6 @@ pub enum TokenType {
     LitShort(u16),
     PaddingAbsolute(u16),
     PaddingRelative(u16),
-    CommentStart,
-    CommentEnd,
     Ascii(String),
     LabelParent(String),
     LabelChild(String),
@@ -36,8 +34,6 @@ impl TokenType {
 
         let token_type = match chunk.value.as_str() {
             "[" | "]" => Some(TokenType::Bracket),
-            "(" => Some(TokenType::CommentStart),
-            ")" => Some(TokenType::CommentEnd),
             "{" => Some(TokenType::MacroOpen),
             "}" => Some(TokenType::MacroClose),
             _ => None,

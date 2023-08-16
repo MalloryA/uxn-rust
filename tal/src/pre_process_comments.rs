@@ -1,8 +1,23 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
-use crate::token::Token;
-use crate::token::TokenType;
 use std::path::PathBuf;
+
+#[derive(PartialEq)]
+enum CommentToken {
+    CommentStart,
+    CommentEnd,
+    Other,
+}
+
+impl CommentToken {
+    fn from_chunk(chunk: &Chunk) -> CommentToken {
+        match &chunk.value[..] {
+            "(" => CommentToken::CommentStart,
+            ")" => CommentToken::CommentEnd,
+            _ => CommentToken::Other,
+        }
+    }
+}
 
 pub struct PreProcessComments<'a> {
     file: PathBuf,
@@ -33,21 +48,17 @@ impl Iterator for PreProcessComments<'_> {
             if let Some(Ok(chunk)) = next {
                 // If we're in comment mode then we only care if our next token is a CommentEnd
                 if self.comment_start.is_some() {
-                    if let Ok(token) = Token::from_chunk(chunk.clone()) {
-                        if token.token_type == TokenType::CommentEnd {
-                            self.comment_start = None;
-                        }
+                    if CommentToken::from_chunk(&chunk) == CommentToken::CommentEnd {
+                        self.comment_start = None;
                     }
                     continue;
                 }
 
                 // If our chunk represents a CommentStart then drop us into comment mode and skip to
                 // the next iteration
-                if let Ok(token) = Token::from_chunk(chunk.clone()) {
-                    if token.token_type == TokenType::CommentStart {
-                        self.comment_start = Some(chunk);
-                        continue;
-                    }
+                if CommentToken::from_chunk(&chunk) == CommentToken::CommentStart {
+                    self.comment_start = Some(chunk);
+                    continue;
                 }
                 return Some(Ok(chunk));
             }
