@@ -320,6 +320,7 @@ pub fn pre_process(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn it_works() {
@@ -486,5 +487,38 @@ mod tests {
         assert!(result.is_ok());
         let rom = result.unwrap();
         assert_eq!(rom, expected);
+    }
+
+    fn assert_match(input: &str, expected: &str) {
+        let mut expected_rom = Rom::new();
+        let bytes = hex::decode(expected.replace(" ", "")).unwrap();
+        for (i, byte) in bytes.iter().enumerate() {
+            expected_rom.write_byte((0x100 + i).try_into().unwrap(), *byte);
+        }
+
+        let mut buffer = Cursor::new(input);
+        let mut chunks = Chunker::new(&mut buffer);
+
+        let result = parse_chunks(Path::new("not-a-file.tal"), PathBuf::new(), &mut chunks);
+        assert!(result.is_ok());
+        let rom = result.unwrap();
+        assert_eq!(rom, expected_rom);
+    }
+
+    #[test]
+    fn it_works_001() {
+        let expected = "800a 8018 1780 0a80 1817";
+
+        let input = "
+            %EMIT { #18 DEO }
+            %OPCODE { #0a EMIT }
+            %TYPE { OPCODE OPCODE }
+
+            |0100
+
+                    TYPE
+        ";
+
+        assert_match(input, expected);
     }
 }
