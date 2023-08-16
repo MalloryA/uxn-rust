@@ -4,18 +4,11 @@ use crate::parser::chunk_file;
 use std::path::Path;
 use std::path::PathBuf;
 
-#[derive(PartialEq)]
-enum IncludeToken {
-    Include(String),
-    Other,
-}
-
-impl IncludeToken {
-    fn from_chunk(chunk: &Chunk) -> IncludeToken {
-        match &chunk.value[0..1] {
-            "~" => IncludeToken::Include(chunk.value[1..].to_string()),
-            _ => IncludeToken::Other,
-        }
+fn include_path_from_chunk(chunk: &Chunk) -> Option<String> {
+    if &chunk.value[0..1] == "~" {
+        Some(chunk.value[1..].to_string())
+    } else {
+        None
     }
 }
 
@@ -54,7 +47,7 @@ impl Iterator for PreProcessIncludes<'_> {
             };
 
             if let Some(Ok(chunk)) = next {
-                if let IncludeToken::Include(path) = IncludeToken::from_chunk(&chunk) {
+                if let Some(path) = include_path_from_chunk(&chunk) {
                     self.replacement = chunk_file(self.cwd, Path::new(&path));
                     continue;
                 }
