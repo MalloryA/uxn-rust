@@ -521,4 +521,17 @@ mod tests {
 
         assert_match(input, expected);
     }
+
+    #[test]
+    fn it_works_002() {
+        let expected = "13 13";
+
+        let input = "
+            %FOO { 13 }
+            %BAR { FOO FOO }
+            |0100 BAR
+        ";
+
+        assert_match(input, expected);
+    }
 }

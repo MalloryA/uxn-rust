@@ -57,7 +57,12 @@ impl Iterator for PreProcessMacros<'_> {
                             } else if let TokenType::MacroOrInstant(name) = token.token_type {
                                 if let Some(definition) = self.macro_definitions.get(&name) {
                                     // We found a macro definition for this name
-                                    self.replacement = definition.to_vec();
+                                    // So prepend the definition to the current replacement vec
+                                    let mut definitions = definition.to_vec();
+                                    definitions.reverse();
+                                    for def in definitions {
+                                        self.replacement.insert(0, def.clone());
+                                    }
                                     continue;
                                 } else {
                                     // We didn't find a macro definition for this name
@@ -139,6 +144,17 @@ mod tests {
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("ADD"), 0, 41))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("#18"), 0, 8))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("DEO"), 0, 12))));
+        assert_eq!(pp.next(), None);
+    }
+
+    #[test]
+    fn macros_inside_macros_work2() {
+        let mut buffer = Cursor::new("%FOO { 13 } %BAR { FOO FOO } BAR");
+        let mut source = Chunker::new(&mut buffer);
+        let mut pp = PreProcessMacros::new(PathBuf::new(), &mut source);
+
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("13"), 0, 7))));
+        assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("13"), 0, 7))));
         assert_eq!(pp.next(), None);
     }
 }
