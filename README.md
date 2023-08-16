@@ -23,3 +23,10 @@ were assembled using `uxnasm`. This is for the purpose of testing this
 assembler.
 
 The remainder of this repository is also released under the MIT license.
+
+### Credit
+
+This assembler was made possible by:
+
+- [The official uxntal documentation](https://wiki.xxiivv.com/site/uxntal.html) and
+- [Nettie's fantastic cheatsheet](https://hachyderm.io/@nettles@mastodon.scot/110793497134065095)
