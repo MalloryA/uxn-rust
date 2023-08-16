@@ -58,11 +58,7 @@ impl Iterator for PreProcessMacros<'_> {
                                 if let Some(definition) = self.macro_definitions.get(&name) {
                                     // We found a macro definition for this name
                                     // So prepend the definition to the current replacement vec
-                                    let mut definitions = definition.to_vec();
-                                    definitions.reverse();
-                                    for def in definitions {
-                                        self.replacement.insert(0, def.clone());
-                                    }
+                                    self.replacement.splice(0..0, definition.to_vec());
                                     continue;
                                 } else {
                                     // We didn't find a macro definition for this name
