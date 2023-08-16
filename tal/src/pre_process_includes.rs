@@ -2,7 +2,6 @@ use crate::chunker::Chunk;
 use crate::error::Error;
 use crate::parser::chunk_file;
 use std::path::Path;
-use std::path::PathBuf;
 
 fn include_path_from_chunk(chunk: &Chunk) -> Option<String> {
     if &chunk.value[0..1] == "~" {
@@ -13,8 +12,6 @@ fn include_path_from_chunk(chunk: &Chunk) -> Option<String> {
 }
 
 pub struct PreProcessIncludes<'a> {
-    #[allow(dead_code)]
-    file: PathBuf,
     cwd: &'a Path,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     replacement: Vec<Result<Chunk, Error>>,
@@ -22,12 +19,10 @@ pub struct PreProcessIncludes<'a> {
 
 impl PreProcessIncludes<'_> {
     pub fn new<'a>(
-        file: PathBuf,
         cwd: &'a Path,
         chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     ) -> PreProcessIncludes<'a> {
         PreProcessIncludes {
-            file,
             cwd,
             chunks,
             replacement: vec![],
@@ -69,7 +64,7 @@ mod tests {
     fn it_works() {
         let cwd = current_dir().unwrap().join("tests/roms");
         let mut source = vec![Ok(Chunk::new(String::from("~hello.tal"), 0, 0))].into_iter();
-        let mut pp = PreProcessIncludes::new(PathBuf::new(), &cwd, &mut source);
+        let mut pp = PreProcessIncludes::new(&cwd, &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("|0100"), 1, 0))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 6))));
@@ -77,13 +72,14 @@ mod tests {
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 13))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("18"), 1, 17))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("DEO"), 1, 20))));
+        assert_eq!(pp.next(), None);
     }
 
     #[test]
     fn includes_inside_includes_work() {
         let cwd = current_dir().unwrap().join("tests/roms");
         let mut source = vec![Ok(Chunk::new(String::from("~hello-include.tal"), 0, 0))].into_iter();
-        let mut pp = PreProcessIncludes::new(PathBuf::new(), &cwd, &mut source);
+        let mut pp = PreProcessIncludes::new(&cwd, &mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("|0100"), 1, 0))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 6))));
@@ -91,5 +87,6 @@ mod tests {
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("LIT"), 1, 13))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("18"), 1, 17))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("DEO"), 1, 20))));
+        assert_eq!(pp.next(), None);
     }
 }

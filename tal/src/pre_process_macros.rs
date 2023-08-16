@@ -1,7 +1,6 @@
 use crate::chunker::Chunk;
 use crate::error::Error;
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 #[derive(PartialEq)]
 enum MacroToken {
@@ -30,8 +29,6 @@ enum MacroState {
 }
 
 pub struct PreProcessMacros<'a> {
-    #[allow(dead_code)]
-    file: PathBuf,
     chunks: &'a mut dyn Iterator<Item = Result<Chunk, Error>>,
     macro_state: MacroState,
     macro_definitions: HashMap<String, Vec<Chunk>>,
@@ -39,12 +36,8 @@ pub struct PreProcessMacros<'a> {
 }
 
 impl PreProcessMacros<'_> {
-    pub fn new(
-        file: PathBuf,
-        chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>,
-    ) -> PreProcessMacros {
+    pub fn new(chunks: &mut dyn Iterator<Item = Result<Chunk, Error>>) -> PreProcessMacros {
         PreProcessMacros {
-            file,
             chunks,
             macro_state: MacroState::WaitingForName,
             macro_definitions: HashMap::new(),
@@ -133,7 +126,7 @@ mod tests {
             Ok(Chunk::new(String::from("EMIT"), 0, 23)),
         ]
         .into_iter();
-        let mut pp = PreProcessMacros::new(PathBuf::new(), &mut source);
+        let mut pp = PreProcessMacros::new(&mut source);
 
         assert_eq!(
             pp.next(),
@@ -149,7 +142,7 @@ mod tests {
         let mut buffer =
             Cursor::new("%EMIT { #18 DEO } %TEST-SHORT { EQU2 #30 ADD EMIT } TEST-SHORT");
         let mut source = Chunker::new(&mut buffer);
-        let mut pp = PreProcessMacros::new(PathBuf::new(), &mut source);
+        let mut pp = PreProcessMacros::new(&mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("EQU2"), 0, 32))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("#30"), 0, 37))));
@@ -163,7 +156,7 @@ mod tests {
     fn macros_inside_macros_work2() {
         let mut buffer = Cursor::new("%FOO { 13 } %BAR { FOO FOO } BAR");
         let mut source = Chunker::new(&mut buffer);
-        let mut pp = PreProcessMacros::new(PathBuf::new(), &mut source);
+        let mut pp = PreProcessMacros::new(&mut source);
 
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("13"), 0, 7))));
         assert_eq!(pp.next(), Some(Ok(Chunk::new(String::from("13"), 0, 7))));

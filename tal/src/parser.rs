@@ -309,8 +309,8 @@ pub fn pre_process(
     let mut pp = input;
     let mut pp = PreProcessBrackets::new(&mut pp);
     let mut pp = PreProcessComments::new(file.clone(), &mut pp);
-    let mut pp = PreProcessIncludes::new(file.clone(), cwd, &mut pp);
-    let pp = PreProcessMacros::new(file, &mut pp);
+    let mut pp = PreProcessIncludes::new(cwd, &mut pp);
+    let pp = PreProcessMacros::new(&mut pp);
     pp.collect()
 }
 

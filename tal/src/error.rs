@@ -62,7 +62,7 @@ mod tests {
         );
         let error_with_context = err.to_string_with_context(&mut reader);
         let expected = "foo.tal:4: Error: Unknown token \"cat\"\n\nBAT cat\n    ^^^";
-        assert_eq!(error_with_context, expected,);
+        assert_eq!(error_with_context, expected);
     }
 
     #[test]
