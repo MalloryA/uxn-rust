@@ -14,7 +14,6 @@ pub enum TokenType {
     Ascii(String),
     LabelParent(String),
     LabelChild(String),
-    Bracket,
     AddressLiteralZeroPage(String, bool),
     AddressLiteralAbsolute(String, bool),
     ImmediateConditional(String, bool),
@@ -26,16 +25,6 @@ pub enum TokenType {
 
 impl TokenType {
     pub fn from_chunk(chunk: Chunk) -> Result<TokenType, String> {
-        // Match whole token
-
-        let token_type = match chunk.value.as_str() {
-            "[" | "]" => Some(TokenType::Bracket),
-            _ => None,
-        };
-        if let Some(tt) = token_type {
-            return Ok(tt);
-        }
-
         // Match opcode
 
         if let Ok(opcode) = Opcode::from_str(&chunk.value) {
@@ -305,12 +294,6 @@ mod tests {
     fn label_child_works() {
         assert_match!("&vector", TokenType::LabelChild("vector".to_string()));
         assert_match!("&", TokenType::LabelChild("".to_string()));
-    }
-
-    #[test]
-    fn bracket_works() {
-        assert_match!("[", TokenType::Bracket);
-        assert_match!("]", TokenType::Bracket);
     }
 
     #[test]

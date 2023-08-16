@@ -2,6 +2,7 @@ use crate::chunker::Chunk;
 use crate::chunker::Chunker;
 use crate::error::Error;
 use crate::opcode::Opcode;
+use crate::pre_process_brackets::PreProcessBrackets;
 use crate::pre_process_comments::PreProcessComments;
 use crate::pre_process_includes::PreProcessIncludes;
 use crate::pre_process_macros::PreProcessMacros;
@@ -275,9 +276,6 @@ fn parse(
                             fill_later.push(FillLater::Short(position, true, 2, name, chunk));
                             position += 2;
                         }
-                        TokenType::Bracket => {
-                            // Ignore
-                        }
                     },
                 }
             }
@@ -309,6 +307,7 @@ pub fn pre_process(
     input: &mut dyn Iterator<Item = Result<Chunk, Error>>,
 ) -> Vec<Result<Chunk, Error>> {
     let mut pp = input;
+    let mut pp = PreProcessBrackets::new(&mut pp);
     let mut pp = PreProcessComments::new(file.clone(), &mut pp);
     let mut pp = PreProcessIncludes::new(file.clone(), cwd, &mut pp);
     let pp = PreProcessMacros::new(file, &mut pp);

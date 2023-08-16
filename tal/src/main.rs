@@ -3,6 +3,7 @@ mod error;
 mod opcode;
 #[macro_use]
 mod parser;
+mod pre_process_brackets;
 mod pre_process_comments;
 mod pre_process_includes;
 mod pre_process_macros;
