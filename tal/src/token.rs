@@ -122,6 +122,7 @@ impl TokenType {
                 TokenType::AddressLiteralAbsolute(name.to_string(), child)
             }
 
+            // Unclear why : and = do the same thing
             ":" | "=" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
                 TokenType::AddressRawAbsoluteShort(name.to_string(), child)
