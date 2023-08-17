@@ -109,7 +109,7 @@ fn parse(
 
     for chunk in chunks {
         let chunk = chunk?;
-        match Token::from_chunk(chunk.clone()) {
+        match Token::from_chunk(&chunk) {
             Err(err) => return Err(Error::new(err, chunk, file)),
             Ok(token) => match token.token_type {
                 TokenType::Opcode(opcode) => {

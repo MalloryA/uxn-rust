@@ -24,7 +24,7 @@ pub enum TokenType {
 }
 
 impl TokenType {
-    pub fn from_chunk(chunk: Chunk) -> Result<TokenType, String> {
+    pub fn from_chunk(chunk: &Chunk) -> Result<TokenType, String> {
         // Match opcode
 
         if let Ok(opcode) = Opcode::from_str(&chunk.value) {
@@ -196,10 +196,13 @@ fn parse_name(s: &str) -> (&str, bool) {
 }
 
 impl Token {
-    pub fn from_chunk(chunk: Chunk) -> Result<Token, String> {
-        let token_type = TokenType::from_chunk(chunk.clone())?;
+    pub fn from_chunk(chunk: &Chunk) -> Result<Token, String> {
+        let token_type = TokenType::from_chunk(chunk)?;
 
-        Ok(Token { token_type, chunk })
+        Ok(Token {
+            token_type,
+            chunk: chunk.clone(),
+        })
     }
 }
 
@@ -210,7 +213,7 @@ mod tests {
     macro_rules! assert_match {
         ( $a:expr, $b:expr ) => {{
             let chunk = Chunk::new(String::from($a), 0, 0);
-            let result = Token::from_chunk(chunk);
+            let result = Token::from_chunk(&chunk);
             assert!(result.is_ok());
             let tt = result.unwrap().token_type;
             assert_eq!(tt, $b);
@@ -220,7 +223,7 @@ mod tests {
     macro_rules! assert_err {
         ( $a:expr ) => {{
             let chunk = Chunk::new($a.to_string(), 0, 0);
-            let result = Token::from_chunk(chunk);
+            let result = Token::from_chunk(&chunk);
             assert!(result.is_err());
         }};
     }
@@ -292,7 +295,7 @@ mod tests {
     #[test]
     fn raw_byte_fails() {
         let chunk = Chunk::new("A".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
+        let result = Token::from_chunk(&chunk);
         assert_eq!(
             result.unwrap().token_type,
             TokenType::Instant("A".to_string())
@@ -307,7 +310,7 @@ mod tests {
     #[test]
     fn raw_short_fails() {
         let chunk = Chunk::new("ABC".to_string(), 0, 0);
-        let result = Token::from_chunk(chunk);
+        let result = Token::from_chunk(&chunk);
         assert_eq!(
             result.unwrap().token_type,
             TokenType::Instant("ABC".to_string())
