@@ -25,11 +25,10 @@ fn split_short(short: u16) -> (u8, u8) {
 enum FillLater {
     // u16: Address to fill in later
     // bool: Relative?
-    // u16: subtract -> when using relative mode, subtract an extra value
     // String: Name
     // Chunk
-    Byte(u16, bool, u16, String, Chunk),
-    Short(u16, bool, u16, String, Chunk),
+    Byte(u16, bool, String, Chunk),
+    Short(u16, bool, String, Chunk),
 }
 
 #[derive(PartialEq)]
@@ -162,7 +161,7 @@ fn parse(
                     rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                     position += 1;
 
-                    fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                    fill_later.push(FillLater::Byte(position, false, full_name, chunk));
                     position += 1;
                 }
                 TokenType::AddressLiteralAbsolute(name, child) => {
@@ -171,7 +170,7 @@ fn parse(
                     rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                     position += 1;
 
-                    fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
+                    fill_later.push(FillLater::Short(position, false, full_name, chunk));
                     position += 2;
                 }
                 TokenType::AddressLiteralRelative(name, child) => {
@@ -180,19 +179,19 @@ fn parse(
                     rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                     position += 1;
 
-                    fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
+                    fill_later.push(FillLater::Byte(position, true, full_name, chunk));
                     position += 1;
                 }
                 TokenType::AddressRawAbsoluteByte(name, child) => {
                     let full_name = get_full_name(name, &parent, child);
 
-                    fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                    fill_later.push(FillLater::Byte(position, false, full_name, chunk));
                     position += 1;
                 }
                 TokenType::AddressRawAbsoluteShort(name, child) => {
                     let full_name = get_full_name(name, &parent, child);
 
-                    fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
+                    fill_later.push(FillLater::Short(position, false, full_name, chunk));
                     position += 2;
                 }
                 TokenType::ImmediateUnconditional(name, child) => {
@@ -201,7 +200,7 @@ fn parse(
                     rom.write_byte(position, Opcode::JMI.as_byte());
                     position += 1;
 
-                    fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                    fill_later.push(FillLater::Short(position, true, full_name, chunk));
                     position += 2;
                 }
                 TokenType::ImmediateConditional(name, child) => {
@@ -210,7 +209,7 @@ fn parse(
                     rom.write_byte(position, Opcode::JCI.as_byte());
                     position += 1;
 
-                    fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                    fill_later.push(FillLater::Short(position, true, full_name, chunk));
                     position += 2;
                 }
                 TokenType::LabelParent(name) => {
@@ -224,7 +223,7 @@ fn parse(
                 TokenType::Instant(name) => {
                     rom.write_byte(position, Opcode::JSI.as_byte());
                     position += 1;
-                    fill_later.push(FillLater::Short(position, true, 2, name, chunk));
+                    fill_later.push(FillLater::Short(position, true, name, chunk));
                     position += 2;
                 }
             },
@@ -234,27 +233,28 @@ fn parse(
     // Fill in all the fill_laters
     for fill in fill_later {
         match fill {
-            FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
+            FillLater::Byte(target, relative, name, chunk) => {
                 let source = address_references.get(&name);
                 if source.is_none() {
                     return Err(Error::new(format!("unknown name \"{name}\""), chunk, file));
                 }
                 let mut source = *source.unwrap();
                 if relative {
-                    // Unclear why uxnasm wraps these
-                    source = source.wrapping_sub(target).wrapping_sub(relative_subtract);
+                    // Unclear what the 2 is for, but it makes it work
+                    source = source.wrapping_sub(target + 2);
                 }
                 let (_high, low) = split_short(source);
                 rom.write_byte(target, low);
             }
-            FillLater::Short(target, relative, relative_subtract, name, chunk) => {
+            FillLater::Short(target, relative, name, chunk) => {
                 let source = address_references.get(&name);
                 if source.is_none() {
                     return Err(Error::new(format!("unknown name \"{name}\""), chunk, file));
                 }
                 let mut source = *source.unwrap();
                 if relative {
-                    source = source.wrapping_sub(target).wrapping_sub(relative_subtract);
+                    // Unclear what the 2 is for, but it makes it work
+                    source = source.wrapping_sub(target + 2);
                 }
                 let (high, low) = split_short(source);
                 rom.write_byte(target, high);
