@@ -7,15 +7,15 @@ pub enum TokenType {
     Opcode(Opcode),
     RawByte(u8),
     RawShort(u16),
-    LitByte(u8),
-    LitShort(u16),
+    LiteralByte(u8),
+    LiteralShort(u16),
     PaddingAbsolute(u16),
     PaddingRelative(u16),
-    Ascii(String),
+    RawAscii(String),
     LabelParent(String),
     LabelChild(String),
-    AddressLiteralZeroPage(String, bool),
-    AddressLiteralAbsolute(String, bool),
+    AddressLiteralAbsoluteByte(String, bool),
+    AddressLiteralAbsoluteShort(String, bool),
     ImmediateConditional(String, bool),
     ImmediateUnconditional(String, bool),
     AddressLiteralRelative(String, bool),
@@ -84,7 +84,7 @@ impl TokenType {
                 if value.is_empty() {
                     return Err("empty ascii value".to_string());
                 } else {
-                    TokenType::Ascii(value)
+                    TokenType::RawAscii(value)
                 }
             }
 
@@ -104,9 +104,9 @@ impl TokenType {
 
             "#" => {
                 if let Ok(byte) = parse_byte(&chunk.value[1..]) {
-                    TokenType::LitByte(byte)
+                    TokenType::LiteralByte(byte)
                 } else if let Ok(short) = parse_short(&chunk.value[1..]) {
-                    TokenType::LitShort(short)
+                    TokenType::LiteralShort(short)
                 } else {
                     return Err("could not parse byte or short".to_string());
                 }
@@ -114,12 +114,12 @@ impl TokenType {
 
             "." => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                TokenType::AddressLiteralZeroPage(name.to_string(), child)
+                TokenType::AddressLiteralAbsoluteByte(name.to_string(), child)
             }
 
             ";" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                TokenType::AddressLiteralAbsolute(name.to_string(), child)
+                TokenType::AddressLiteralAbsoluteShort(name.to_string(), child)
             }
 
             // Unclear why : and = do the same thing
@@ -240,7 +240,7 @@ mod tests {
 
     #[test]
     fn ascii_works() {
-        assert_match!("\"foobar", TokenType::Ascii("foobar".to_string()));
+        assert_match!("\"foobar", TokenType::RawAscii("foobar".to_string()));
     }
 
     #[test]
@@ -250,8 +250,8 @@ mod tests {
 
     #[test]
     fn lit_shorthand_works() {
-        assert_match!("#13", TokenType::LitByte(0x13));
-        assert_match!("#1312", TokenType::LitShort(0x1312));
+        assert_match!("#13", TokenType::LiteralByte(0x13));
+        assert_match!("#1312", TokenType::LiteralShort(0x1312));
     }
 
     #[test]
@@ -321,23 +321,23 @@ mod tests {
     fn address_literal_zero_page_works() {
         assert_match!(
             ".Foo/bar",
-            TokenType::AddressLiteralZeroPage("Foo/bar".to_string(), false)
+            TokenType::AddressLiteralAbsoluteByte("Foo/bar".to_string(), false)
         );
         assert_match!(
             ".Foo",
-            TokenType::AddressLiteralZeroPage("Foo".to_string(), false)
+            TokenType::AddressLiteralAbsoluteByte("Foo".to_string(), false)
         );
         assert_match!(
             ".&bar",
-            TokenType::AddressLiteralZeroPage("bar".to_string(), true)
+            TokenType::AddressLiteralAbsoluteByte("bar".to_string(), true)
         );
         assert_match!(
             ".",
-            TokenType::AddressLiteralZeroPage("".to_string(), false)
+            TokenType::AddressLiteralAbsoluteByte("".to_string(), false)
         );
         assert_match!(
             ".&",
-            TokenType::AddressLiteralZeroPage("".to_string(), true)
+            TokenType::AddressLiteralAbsoluteByte("".to_string(), true)
         );
     }
 
@@ -345,19 +345,19 @@ mod tests {
     fn address_literal_absolute_works() {
         assert_match!(
             ";foo-bar",
-            TokenType::AddressLiteralAbsolute("foo-bar".to_string(), false)
+            TokenType::AddressLiteralAbsoluteShort("foo-bar".to_string(), false)
         );
         assert_match!(
             ";&foo-bar",
-            TokenType::AddressLiteralAbsolute("foo-bar".to_string(), true)
+            TokenType::AddressLiteralAbsoluteShort("foo-bar".to_string(), true)
         );
         assert_match!(
             ";",
-            TokenType::AddressLiteralAbsolute("".to_string(), false)
+            TokenType::AddressLiteralAbsoluteShort("".to_string(), false)
         );
         assert_match!(
             ";&",
-            TokenType::AddressLiteralAbsolute("".to_string(), true)
+            TokenType::AddressLiteralAbsoluteShort("".to_string(), true)
         );
     }
 

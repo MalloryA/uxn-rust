@@ -133,19 +133,19 @@ fn parse(
                 TokenType::PaddingRelative(offset) => {
                     position += offset;
                 }
-                TokenType::Ascii(value) => {
+                TokenType::RawAscii(value) => {
                     for byte in value.bytes() {
                         rom.write_byte(position, byte);
                         position += 1;
                     }
                 }
-                TokenType::LitByte(byte) => {
+                TokenType::LiteralByte(byte) => {
                     rom.write_byte(position, Opcode::LIT(false, false).as_byte());
                     position += 1;
                     rom.write_byte(position, byte);
                     position += 1;
                 }
-                TokenType::LitShort(short) => {
+                TokenType::LiteralShort(short) => {
                     rom.write_byte(position, Opcode::LIT(true, false).as_byte());
                     position += 1;
 
@@ -155,7 +155,7 @@ fn parse(
                     rom.write_byte(position, low);
                     position += 1;
                 }
-                TokenType::AddressLiteralZeroPage(name, child) => {
+                TokenType::AddressLiteralAbsoluteByte(name, child) => {
                     let full_name = get_full_name(name, &parent, child);
 
                     rom.write_byte(position, Opcode::LIT(false, false).as_byte());
@@ -164,7 +164,7 @@ fn parse(
                     fill_later.push(FillLater::Byte(position, false, full_name, chunk));
                     position += 1;
                 }
-                TokenType::AddressLiteralAbsolute(name, child) => {
+                TokenType::AddressLiteralAbsoluteShort(name, child) => {
                     let full_name = get_full_name(name, &parent, child);
 
                     rom.write_byte(position, Opcode::LIT(true, false).as_byte());

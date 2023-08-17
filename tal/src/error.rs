@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn it_handles_tabs() {
         let err = Error {
-            message: "could not parse AddressLiteralZeroPage".to_string(),
+            message: "could not parse AddressLiteralAbsoluteByte".to_string(),
             chunk: Chunk::new(".octave".to_string(), 108, 32),
             file: PathBuf::from("foo.tal"),
         };
@@ -78,21 +78,21 @@ mod tests {
                 + "\t[ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n",
         );
         let error_with_context = err.to_string_with_context(&mut reader);
-        let expected = "foo.tal:109: Error: could not parse AddressLiteralZeroPage\n\n        [ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n                                       ^^^^^^^";
+        let expected = "foo.tal:109: Error: could not parse AddressLiteralAbsoluteByte\n\n        [ LIT \"a ] NEQk NIP ?&no-c #30 .octave LDZ #0c MUL ADD play &no-c\n                                       ^^^^^^^";
         assert_eq!(error_with_context, expected);
     }
 
     #[test]
     fn it_handles_two_tabs() {
         let err = Error {
-            message: "could not parse AddressLiteralZeroPage".to_string(),
+            message: "could not parse AddressLiteralAbsoluteByte".to_string(),
             chunk: Chunk::new(".center/x".to_string(), 31, 7),
             file: PathBuf::from("foo.tal"),
         };
 
         let mut reader = Cursor::new("\n".repeat(31) + "\t\tDUP2 .center/x STZ2");
         let error_with_context = err.to_string_with_context(&mut reader);
-        let expected = "foo.tal:32: Error: could not parse AddressLiteralZeroPage\n\n                DUP2 .center/x STZ2\n                     ^^^^^^^^^";
+        let expected = "foo.tal:32: Error: could not parse AddressLiteralAbsoluteByte\n\n                DUP2 .center/x STZ2\n                     ^^^^^^^^^";
         assert_eq!(error_with_context, expected);
     }
 }
