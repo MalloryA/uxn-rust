@@ -47,9 +47,9 @@ impl TokenType {
             "|" => {
                 let number = &chunk.value[1..];
                 if let Ok(short) = parse_short(number) {
-                    Some(TokenType::PaddingAbsolute(short))
+                    TokenType::PaddingAbsolute(short)
                 } else if let Ok(byte) = parse_byte(number) {
-                    Some(TokenType::PaddingAbsolute(byte.into()))
+                    TokenType::PaddingAbsolute(byte.into())
                 } else {
                     return Err("could not parse PaddingAbsolute".to_string());
                 }
@@ -72,7 +72,7 @@ impl TokenType {
                                 value <<= 8;
                                 value += byte as u16;
                             }
-                            Some(TokenType::PaddingRelative(value))
+                            TokenType::PaddingRelative(value)
                         }
                     }
                     Err(_) => return Err("Could not parse hex".to_string()),
@@ -84,7 +84,7 @@ impl TokenType {
                 if value.is_empty() {
                     return Err("empty ascii value".to_string());
                 } else {
-                    Some(TokenType::Ascii(value))
+                    TokenType::Ascii(value)
                 }
             }
 
@@ -93,20 +93,20 @@ impl TokenType {
                 if value.is_empty() {
                     return Err("empty label parent".to_string());
                 } else {
-                    Some(TokenType::LabelParent(value))
+                    TokenType::LabelParent(value)
                 }
             }
 
             "&" => {
                 let value = chunk.value[1..].to_string();
-                Some(TokenType::LabelChild(value))
+                TokenType::LabelChild(value)
             }
 
             "#" => {
                 if let Ok(byte) = parse_byte(&chunk.value[1..]) {
-                    Some(TokenType::LitByte(byte))
+                    TokenType::LitByte(byte)
                 } else if let Ok(short) = parse_short(&chunk.value[1..]) {
-                    Some(TokenType::LitShort(short))
+                    TokenType::LitShort(short)
                 } else {
                     return Err("could not parse byte or short".to_string());
                 }
@@ -117,7 +117,7 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse AddressLiteralZeroPage".to_string());
                 }
-                Some(TokenType::AddressLiteralZeroPage(name.to_string(), child))
+                TokenType::AddressLiteralZeroPage(name.to_string(), child)
             }
 
             ";" => {
@@ -125,7 +125,7 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse AddressLiteralAbsolute".to_string());
                 }
-                Some(TokenType::AddressLiteralAbsolute(name.to_string(), child))
+                TokenType::AddressLiteralAbsolute(name.to_string(), child)
             }
 
             ":" | "=" => {
@@ -133,7 +133,7 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse AddressRawAbsoluteShort".to_string());
                 }
-                Some(TokenType::AddressRawAbsoluteShort(name.to_string(), child))
+                TokenType::AddressRawAbsoluteShort(name.to_string(), child)
             }
 
             "," => {
@@ -141,7 +141,7 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse AddressLiteralRelative".to_string());
                 }
-                Some(TokenType::AddressLiteralRelative(name.to_string(), child))
+                TokenType::AddressLiteralRelative(name.to_string(), child)
             }
 
             "-" => {
@@ -149,12 +149,12 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse AddressRawAbsoluteByte".to_string());
                 }
-                Some(TokenType::AddressRawAbsoluteByte(name.to_string(), child))
+                TokenType::AddressRawAbsoluteByte(name.to_string(), child)
             }
 
             "!" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                Some(TokenType::ImmediateUnconditional(name.to_string(), child))
+                TokenType::ImmediateUnconditional(name.to_string(), child)
             }
 
             "?" => {
@@ -162,18 +162,12 @@ impl TokenType {
                 if name.is_empty() {
                     return Err("could not parse ImmediateConditional".to_string());
                 }
-                Some(TokenType::ImmediateConditional(name.to_string(), child))
+                TokenType::ImmediateConditional(name.to_string(), child)
             }
 
-            _ => None,
+            _ => TokenType::Instant(chunk.value.clone()),
         };
-        if let Some(tt) = token_type {
-            return Ok(tt);
-        }
-
-        // Default assumption
-
-        Ok(TokenType::Instant(chunk.value.clone()))
+        Ok(token_type)
     }
 }
 
@@ -331,8 +325,6 @@ mod tests {
 
     #[test]
     fn raw_short_fails() {
-        // TODO
-        //assert_err!("ABC");
         let chunk = Chunk::new("ABC".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert_eq!(

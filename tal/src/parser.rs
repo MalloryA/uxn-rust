@@ -108,179 +108,162 @@ fn parse(
 
     let mut rom = Rom::new();
 
-    loop {
-        let next = chunks.next();
-
-        match next {
-            None => {
-                // Fill in all the fill_laters
-                for fill in fill_later {
-                    match fill {
-                        FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
-                            let source = address_references.get(&name);
-                            if source.is_none() {
-                                return Err(Error::new(
-                                    format!("unknown name \"{name}\""),
-                                    chunk,
-                                    file,
-                                ));
-                            }
-                            let mut source = *source.unwrap();
-                            if relative {
-                                // Unclear why uxnasm wraps these
-                                source =
-                                    source.wrapping_sub(target).wrapping_sub(relative_subtract);
-                            }
-                            let (_high, low) = split_short(source);
-                            rom.write_byte(target, low);
-                        }
-                        FillLater::Short(target, relative, relative_subtract, name, chunk) => {
-                            let source = address_references.get(&name);
-                            if source.is_none() {
-                                return Err(Error::new(
-                                    format!("unknown name \"{name}\""),
-                                    chunk,
-                                    file,
-                                ));
-                            }
-                            let mut source = *source.unwrap();
-                            if relative {
-                                source =
-                                    source.wrapping_sub(target).wrapping_sub(relative_subtract);
-                            }
-                            let (high, low) = split_short(source);
-                            rom.write_byte(target, high);
-                            rom.write_byte(target + 1, low);
-                        }
+    for chunk in chunks {
+        let chunk = chunk?;
+        match Token::from_chunk(chunk.clone()) {
+            Err(err) => return Err(Error::new(err, chunk, file)),
+            Ok(token) => match token.token_type {
+                TokenType::Opcode(opcode) => {
+                    rom.write_byte(position, opcode.as_byte());
+                    position += 1;
+                }
+                TokenType::RawByte(byte) => {
+                    rom.write_byte(position, byte);
+                    position += 1;
+                }
+                TokenType::RawShort(short) => {
+                    let (high, low) = split_short(short);
+                    rom.write_byte(position, high);
+                    position += 1;
+                    rom.write_byte(position, low);
+                    position += 1;
+                }
+                TokenType::PaddingAbsolute(offset) => {
+                    position = offset;
+                }
+                TokenType::PaddingRelative(offset) => {
+                    position += offset;
+                }
+                TokenType::Ascii(value) => {
+                    for byte in value.bytes() {
+                        rom.write_byte(position, byte);
+                        position += 1;
                     }
                 }
-
-                return Ok(rom);
-            }
-            Some(chunk) => {
-                let chunk = chunk?;
-                match Token::from_chunk(chunk.clone()) {
-                    Err(err) => return Err(Error::new(err, chunk, file)),
-                    Ok(token) => match token.token_type {
-                        TokenType::Opcode(opcode) => {
-                            rom.write_byte(position, opcode.as_byte());
-                            position += 1;
-                        }
-                        TokenType::RawByte(byte) => {
-                            rom.write_byte(position, byte);
-                            position += 1;
-                        }
-                        TokenType::RawShort(short) => {
-                            let (high, low) = split_short(short);
-                            rom.write_byte(position, high);
-                            position += 1;
-                            rom.write_byte(position, low);
-                            position += 1;
-                        }
-                        TokenType::PaddingAbsolute(offset) => {
-                            position = offset;
-                        }
-                        TokenType::PaddingRelative(offset) => {
-                            position += offset;
-                        }
-                        TokenType::Ascii(value) => {
-                            for byte in value.bytes() {
-                                rom.write_byte(position, byte);
-                                position += 1;
-                            }
-                        }
-                        TokenType::LitByte(byte) => {
-                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                            position += 1;
-                            rom.write_byte(position, byte);
-                            position += 1;
-                        }
-                        TokenType::LitShort(short) => {
-                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
-                            position += 1;
-
-                            let (high, low) = split_short(short);
-                            rom.write_byte(position, high);
-                            position += 1;
-                            rom.write_byte(position, low);
-                            position += 1;
-                        }
-                        TokenType::AddressLiteralZeroPage(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                            position += 1;
-
-                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
-                            position += 1;
-                        }
-                        TokenType::AddressLiteralAbsolute(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            rom.write_byte(position, Opcode::LIT(true, false).as_byte());
-                            position += 1;
-
-                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
-                            position += 2;
-                        }
-                        TokenType::AddressLiteralRelative(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            rom.write_byte(position, Opcode::LIT(false, false).as_byte());
-                            position += 1;
-
-                            fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
-                            position += 1;
-                        }
-                        TokenType::AddressRawAbsoluteByte(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
-                            position += 1;
-                        }
-                        TokenType::AddressRawAbsoluteShort(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
-                            position += 2;
-                        }
-                        TokenType::ImmediateUnconditional(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            rom.write_byte(position, Opcode::JMI.as_byte());
-                            position += 1;
-
-                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
-                            position += 2;
-                        }
-                        TokenType::ImmediateConditional(name, child) => {
-                            let full_name = get_full_name(name, &parent, child);
-
-                            rom.write_byte(position, Opcode::JCI.as_byte());
-                            position += 1;
-
-                            fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
-                            position += 2;
-                        }
-                        TokenType::LabelParent(name) => {
-                            parent = Some(name.clone());
-                            address_references.insert(name, position);
-                        }
-                        TokenType::LabelChild(name) => {
-                            let full_name = get_full_name(name, &parent, true);
-                            address_references.insert(full_name, position);
-                        }
-                        TokenType::Instant(name) => {
-                            rom.write_byte(position, Opcode::JSI.as_byte());
-                            position += 1;
-                            fill_later.push(FillLater::Short(position, true, 2, name, chunk));
-                            position += 2;
-                        }
-                    },
+                TokenType::LitByte(byte) => {
+                    rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                    position += 1;
+                    rom.write_byte(position, byte);
+                    position += 1;
                 }
+                TokenType::LitShort(short) => {
+                    rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                    position += 1;
+
+                    let (high, low) = split_short(short);
+                    rom.write_byte(position, high);
+                    position += 1;
+                    rom.write_byte(position, low);
+                    position += 1;
+                }
+                TokenType::AddressLiteralZeroPage(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                    position += 1;
+
+                    fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                    position += 1;
+                }
+                TokenType::AddressLiteralAbsolute(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    rom.write_byte(position, Opcode::LIT(true, false).as_byte());
+                    position += 1;
+
+                    fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
+                    position += 2;
+                }
+                TokenType::AddressLiteralRelative(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    rom.write_byte(position, Opcode::LIT(false, false).as_byte());
+                    position += 1;
+
+                    fill_later.push(FillLater::Byte(position, true, 2, full_name, chunk));
+                    position += 1;
+                }
+                TokenType::AddressRawAbsoluteByte(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    fill_later.push(FillLater::Byte(position, false, 0, full_name, chunk));
+                    position += 1;
+                }
+                TokenType::AddressRawAbsoluteShort(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    fill_later.push(FillLater::Short(position, false, 0, full_name, chunk));
+                    position += 2;
+                }
+                TokenType::ImmediateUnconditional(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    rom.write_byte(position, Opcode::JMI.as_byte());
+                    position += 1;
+
+                    fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                    position += 2;
+                }
+                TokenType::ImmediateConditional(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    rom.write_byte(position, Opcode::JCI.as_byte());
+                    position += 1;
+
+                    fill_later.push(FillLater::Short(position, true, 2, full_name, chunk));
+                    position += 2;
+                }
+                TokenType::LabelParent(name) => {
+                    parent = Some(name.clone());
+                    address_references.insert(name, position);
+                }
+                TokenType::LabelChild(name) => {
+                    let full_name = get_full_name(name, &parent, true);
+                    address_references.insert(full_name, position);
+                }
+                TokenType::Instant(name) => {
+                    rom.write_byte(position, Opcode::JSI.as_byte());
+                    position += 1;
+                    fill_later.push(FillLater::Short(position, true, 2, name, chunk));
+                    position += 2;
+                }
+            },
+        }
+    }
+
+    // Fill in all the fill_laters
+    for fill in fill_later {
+        match fill {
+            FillLater::Byte(target, relative, relative_subtract, name, chunk) => {
+                let source = address_references.get(&name);
+                if source.is_none() {
+                    return Err(Error::new(format!("unknown name \"{name}\""), chunk, file));
+                }
+                let mut source = *source.unwrap();
+                if relative {
+                    // Unclear why uxnasm wraps these
+                    source = source.wrapping_sub(target).wrapping_sub(relative_subtract);
+                }
+                let (_high, low) = split_short(source);
+                rom.write_byte(target, low);
+            }
+            FillLater::Short(target, relative, relative_subtract, name, chunk) => {
+                let source = address_references.get(&name);
+                if source.is_none() {
+                    return Err(Error::new(format!("unknown name \"{name}\""), chunk, file));
+                }
+                let mut source = *source.unwrap();
+                if relative {
+                    source = source.wrapping_sub(target).wrapping_sub(relative_subtract);
+                }
+                let (high, low) = split_short(source);
+                rom.write_byte(target, high);
+                rom.write_byte(target + 1, low);
             }
         }
     }
+
+    Ok(rom)
 }
 
 pub fn chunk_file(cwd: &Path, file: &Path) -> Vec<Result<Chunk, Error>> {
