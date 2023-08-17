@@ -63,8 +63,12 @@ fn modify(byte: u8, two: bool, keep: bool, return_stack: bool) -> u8 {
 
 macro_rules! with_2r {
     ( $a:expr, $b:expr ) => {{
-        let (two, _, return_stack) = parse_modifiers($b)?;
-        Ok($a(two, return_stack))
+        let (two, keep, return_stack) = parse_modifiers($b)?;
+        if keep {
+            Err("LIT opcode cannot take \"k\" modifier".to_string())
+        } else {
+            Ok($a(two, return_stack))
+        }
     }};
 }
 
@@ -202,6 +206,10 @@ mod tests {
             result.unwrap_err(),
             "valid opcode provided invalid modifiers \"ra\""
         );
+
+        let result = Opcode::from_str("LITk");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "LIT opcode cannot take \"k\" modifier");
     }
 
     #[test]
