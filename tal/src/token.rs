@@ -114,41 +114,26 @@ impl TokenType {
 
             "." => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse AddressLiteralZeroPage".to_string());
-                }
                 TokenType::AddressLiteralZeroPage(name.to_string(), child)
             }
 
             ";" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse AddressLiteralAbsolute".to_string());
-                }
                 TokenType::AddressLiteralAbsolute(name.to_string(), child)
             }
 
             ":" | "=" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse AddressRawAbsoluteShort".to_string());
-                }
                 TokenType::AddressRawAbsoluteShort(name.to_string(), child)
             }
 
             "," => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse AddressLiteralRelative".to_string());
-                }
                 TokenType::AddressLiteralRelative(name.to_string(), child)
             }
 
             "-" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse AddressRawAbsoluteByte".to_string());
-                }
                 TokenType::AddressRawAbsoluteByte(name.to_string(), child)
             }
 
@@ -159,9 +144,6 @@ impl TokenType {
 
             "?" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                if name.is_empty() {
-                    return Err("could not parse ImmediateConditional".to_string());
-                }
                 TokenType::ImmediateConditional(name.to_string(), child)
             }
 
@@ -308,8 +290,6 @@ mod tests {
 
     #[test]
     fn raw_byte_fails() {
-        // TODO
-        //assert_err!("A");
         let chunk = Chunk::new("A".to_string(), 0, 0);
         let result = Token::from_chunk(chunk);
         assert_eq!(
@@ -347,12 +327,14 @@ mod tests {
             ".&bar",
             TokenType::AddressLiteralZeroPage("bar".to_string(), true)
         );
-    }
-
-    #[test]
-    fn address_literal_zero_page_fails() {
-        assert_err!(".");
-        assert_err!(".&");
+        assert_match!(
+            ".",
+            TokenType::AddressLiteralZeroPage("".to_string(), false)
+        );
+        assert_match!(
+            ".&",
+            TokenType::AddressLiteralZeroPage("".to_string(), true)
+        );
     }
 
     #[test]
@@ -365,12 +347,14 @@ mod tests {
             ";&foo-bar",
             TokenType::AddressLiteralAbsolute("foo-bar".to_string(), true)
         );
-    }
-
-    #[test]
-    fn address_literal_absolute_fails() {
-        assert_err!(";");
-        assert_err!(";&");
+        assert_match!(
+            ";",
+            TokenType::AddressLiteralAbsolute("".to_string(), false)
+        );
+        assert_match!(
+            ";&",
+            TokenType::AddressLiteralAbsolute("".to_string(), true)
+        );
     }
 
     #[test]
@@ -391,18 +375,42 @@ mod tests {
             "-&foo-bar",
             TokenType::AddressRawAbsoluteByte("foo-bar".to_string(), true)
         );
-    }
-
-    #[test]
-    fn address_raw_absolute_fails() {
-        assert_err!(":");
-        assert_err!(":&");
-        assert_err!("-");
-        assert_err!("-&");
+        assert_match!(
+            ":",
+            TokenType::AddressRawAbsoluteShort("".to_string(), false)
+        );
+        assert_match!(
+            ":&",
+            TokenType::AddressRawAbsoluteShort("".to_string(), true)
+        );
+        assert_match!(
+            "-",
+            TokenType::AddressRawAbsoluteByte("".to_string(), false)
+        );
+        assert_match!(
+            "-&",
+            TokenType::AddressRawAbsoluteByte("".to_string(), true)
+        );
     }
 
     #[test]
     fn opcode_takes_precidence_over_raw_short() {
         assert_match!("ADD2", TokenType::Opcode(Opcode::ADD(true, false, false)));
+    }
+
+    #[test]
+    fn immediate_unconditional_works() {
+        assert_match!(
+            "!foo-bar",
+            TokenType::ImmediateUnconditional("foo-bar".to_string(), false)
+        );
+        assert_match!(
+            "!&foo-bar",
+            TokenType::ImmediateUnconditional("foo-bar".to_string(), true)
+        );
+        assert_match!(
+            "!&",
+            TokenType::ImmediateUnconditional("".to_string(), true)
+        );
     }
 }
