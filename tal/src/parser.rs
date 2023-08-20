@@ -194,6 +194,12 @@ fn parse(
                     fill_later.push(FillLater::Short(position, false, full_name, chunk));
                     position += 2;
                 }
+                TokenType::AddressRawRelative(name, child) => {
+                    let full_name = get_full_name(name, &parent, child);
+
+                    fill_later.push(FillLater::Byte(position, true, full_name, chunk));
+                    position += 1;
+                }
                 TokenType::ImmediateUnconditional(name, child) => {
                     let full_name = get_full_name(name, &parent, child);
 
@@ -510,6 +516,17 @@ mod tests {
             %FOO { 13 }
             %BAR { FOO FOO }
             |0100 BAR
+        ";
+
+        assert_match(input, expected);
+    }
+
+    #[test]
+    fn it_works_003() {
+        let expected = "1234 fc";
+
+        let input = "
+            |0100 @foo 1234 _foo
         ";
 
         assert_match(input, expected);

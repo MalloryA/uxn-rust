@@ -21,6 +21,7 @@ pub enum TokenType {
     AddressLiteralRelative(String, bool),
     AddressRawAbsoluteByte(String, bool),
     AddressRawAbsoluteShort(String, bool),
+    AddressRawRelative(String, bool),
 }
 
 impl TokenType {
@@ -136,6 +137,11 @@ impl TokenType {
             "-" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
                 TokenType::AddressRawAbsoluteByte(name.to_string(), child)
+            }
+
+            "_" => {
+                let (name, child) = parse_name(&chunk.value[1..]);
+                TokenType::AddressRawRelative(name.to_string(), child)
             }
 
             "!" => {
