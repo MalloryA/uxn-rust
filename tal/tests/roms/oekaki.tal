@@ -1,0 +1,512 @@
+( draw your brains out )
+
+|00 @System &vector $2 &wst $1 &rst $1 &pad $4 &r $2 &g $2 &b $2 &debug $1 &halt $1
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+|80 @Controller &vector $2 &button $1 &key $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &pad $3 &modx $2 &mody $2
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+
+|0000
+
+	@src $1 &buf $30
+	@canvas &width $2 &height $2
+	@brush &color $1 &shape $1 &patt $1 &blend $1
+	@menu &hide $1
+
+|0100
+
+@on-reset ( -> )
+	;meta #06 DEO2
+	( | theme )
+	#fb70 .System/r DEO2
+	#fb70 .System/g DEO2
+	#fb70 .System/b DEO2
+	load-theme
+	( | size )
+	#0200 .Screen/width DEO2
+	#0140 .Screen/height DEO2
+	( | canvas )
+	.Screen/width DEI2 .canvas/width STZ2
+	.Screen/height DEI2 .canvas/height STZ2
+	( | vectors )
+	;on-console .Console/vector DEO2
+	;on-control .Controller/vector DEO2
+	;on-mouse .Mouse/vector DEO2
+	( | defaults )
+	[ LIT2 03 -brush/color ] STZ
+	[ LIT2 01 -brush/blend ] STZ
+	.Console/type DEI ?{
+		;dict/default ;src/buf <scpy>
+		;src/buf <open-file>
+		BRK }
+	BRK
+
+@meta
+	00
+	( name ) "Oekaki 0a
+	( desc ) "Drawing 20 "Program 0a
+	( auth ) "By 20 "Devine 20 "Lu 20 "Linvega 0a
+	( date ) "18 20 "Aug 20 "2023 $1
+	( exts ) 00
+
+(
+@|vectors )
+
+@on-console ( -> )
+	.Console/read DEI .src zkey ?&open
+	BRK
+	&open ( -> )
+		;src/buf <open-file>
+		BRK
+
+@on-control ( -> )
+	.Controller/button DEI #01 AND ?on-control-options
+	.Controller/key DEI
+	( | keys )
+	DUP #5b NEQ ?{
+		.brush/shape LDZ #01 SUB <set-shape> }
+	DUP #5d NEQ ?{
+		.brush/shape LDZ INC <set-shape> }
+	DUP [ LIT "1 ] NEQ ?{ #00 <set-color> }
+	DUP [ LIT "2 ] NEQ ?{ #01 <set-color> }
+	DUP [ LIT "3 ] NEQ ?{ #02 <set-color> }
+	DUP [ LIT "4 ] NEQ ?{ #03 <set-color> }
+	DUP [ LIT "q ] NEQ ?{ #00 <set-shape> }
+	DUP [ LIT "w ] NEQ ?{ #02 <set-shape> }
+	DUP [ LIT "e ] NEQ ?{ #04 <set-shape> }
+	DUP [ LIT "r ] NEQ ?{ #06 <set-shape> }
+	DUP [ LIT "a ] NEQ ?{
+		.brush/blend LDZ #00 EQU <set-blend> }
+	DUP #09 NEQ ?{ <toggle-menu> }
+	DUP #1b NEQ ?{ <redraw-all> }
+	POP BRK
+
+@on-control-options ( -> )
+	.Controller/key DEI
+	( | keys )
+	DUP [ LIT "s ] NEQ ?{ ;src/buf <save-file> }
+	DUP [ LIT "o ] NEQ ?{ ;src/buf <open-file> }
+	POP BRK
+
+@on-mouse ( -> )
+	.menu/hide LDZ ?{
+		.Mouse/x DEI2 #000d LTH2 ?on-mouse-menu }
+	<draw-pointer>
+	.Mouse/state DEI #00 NEQ [ LIT &last $1 ] OVR ,&last STR
+	DUP2 #0100 EQU2 ?&on-down
+	DUP2 #0101 EQU2 ?&on-drag
+	POP2 BRK
+	&on-down ( states* -> )
+		POP2 .Mouse/x DEI2 #0004 SUB2 ,&last-x STR2
+		.Mouse/y DEI2 #0004 SUB2 ,&last-y STR2
+		BRK
+	&on-drag ( states* -> )
+		POP2 [ LIT2 &last-x $2 ] [ LIT2 &last-y $2 ]
+		( ) .Mouse/x DEI2 #0004 SUB2 DUP2 ,&last-x STR2
+		( ) .Mouse/y DEI2 #0004 SUB2 DUP2 ,&last-y STR2
+		( ) <paint-line>
+		BRK
+
+@on-mouse-menu ( -> )
+	[ LIT2 43 -Mouse/state ] DEI #00 NEQ SUB ;hand-icn <update-cursor>
+	.Mouse/state DEI ?{ BRK }
+	.Mouse/y DEI2 #0002 SUB2 #000a DIV2 NIP
+	( | size )
+	DUP #08 GTH ?{ <release-mouse>
+		<set-shape>
+		BRK }
+	#09 SUB
+	( | patt )
+	DUP #0c GTH ?{ <release-mouse>
+		<set-patt>
+		BRK }
+	POP BRK
+
+@<release-mouse> ( -- )
+	[ LIT2 00 -Mouse/state ] DEO
+	JMP2r
+
+@<toggle-menu> ( -- )
+	.menu/hide LDZk #00 EQU SWP STZ
+	!<draw-menu>
+
+@<hide-menu> ( -- )
+	[ LIT2 01 -menu/hide ] STZ
+	!<clear-menu>
+
+(
+@|brush )
+
+@get-brush-shape ( -- addr* )
+	;shapes-icns [ LIT2 00 -brush/shape ] LDZ #30 SFT2 ADD2 JMP2r
+
+@get-brush-patt ( -- addr* )
+	;patts-icns [ LIT2 00 -brush/patt ] LDZ #30 SFT2 ADD2 JMP2r
+
+@get-brush-type ( -- fn* )
+	.Mouse/state DEI #01 EQU ?{ ;dec-pixel JMP2r }
+	;inc-pixel JMP2r
+
+@<set-shape> ( size -- )
+	#0f AND .brush/shape STZ
+	!<draw-menu>
+
+@<set-patt> ( color -- )
+	.brush/patt STZ
+	!<draw-menu>
+
+@<set-blend> ( color -- )
+	.brush/blend STZ
+	!<draw-menu>
+
+@<set-color> ( color -- )
+	.brush/color STZ
+	<draw-pointer>
+	!<draw-menu>
+
+(
+@|main )
+
+@get-tile-id ( x* y* -- x* y* addr* )
+	( x ) OVR2 #03 SFT2
+	( y ) OVR2 #03 SFT2 .canvas/width LDZ2 #03 SFT2 MUL2 ADD2 JMP2r
+
+@get-tile-addr ( x* y* -- x* y* addr* )
+	get-tile-id #40 SFT2 ;pict ADD2 JMP2r
+
+@get-pixel ( x* y* -- x* y* color )
+	( get tile addr ) get-tile-addr STH2
+	( get glyph vertical offset ) DUP2 #0007 AND2 STH2 ADD2r
+	( make bit mask ) OVR2 NIP #07 AND #80 SWP SFT
+	( ch1 ) DUP LDAkr STHr AND #00 NEQ SWP
+	( ch2 ) STH2r #0008 ADD2 LDA AND #00 NEQ DUP ADD ORA JMP2r
+
+@<set-pixel> ( x* y* color -- x* y* )
+	#01 STH2
+	( within x ) OVR2 .canvas/width LDZ2 GTH2 ?&outside
+	( within y ) DUP2 .canvas/height LDZ2 GTH2 ?&outside
+	( get tile addr ) get-tile-addr STH2
+	( get glyph vertical offset ) DUP2 #0007 AND2 STH2 ADD2r
+	( make bit mask ) OVR2 NIP #07 AND #80 SWP SFT
+	( ch0 without ) DUP #ff EOR LDAkr STHr AND
+	( ch0 with ) OVR OVR2r ANDr STHr MUL ORA STH2kr STA
+	( move to ch2 ) LIT2r 0008 ADD2r
+	( ch0 without ) DUP #ff EOR LDAkr STHr AND
+	( ch0 with ) SWP SWP2r SFTr STHr MUL ORA STH2r STA
+	JMP2r
+	&outside ( `color* -- )
+		POP2r JMP2r
+
+(
+@|filters )
+
+@inc-pixel ( x* y* -- )
+	patt-pixel ?{ POP2 POP2 JMP2r }
+	.brush/blend LDZ ?{
+		.brush/color LDZ <set-pixel>
+		!<redraw-tile> }
+	get-pixel INCk blend-pixel <set-pixel>
+	!<redraw-tile>
+
+@dec-pixel ( x* y* -- )
+	patt-pixel ?{ POP2 POP2 JMP2r }
+	get-pixel DUP #01 SUB blend-pixel <set-pixel>
+	!<redraw-tile>
+
+@patt-pixel ( x* y* -- x* y* f )
+	( y* ) DUP2 #0007 AND2 get-brush-patt ADD2 LDA STH
+	( ) OVR2 NIP #80 SWP #07 AND SFT STHr AND JMP2r
+
+@blend-pixel ( a b -- color )
+	DUP #04 NEQ ?{ POP #03 }
+	DUP INC ?{ POP #00 }
+	NEQk ?{ POP JMP2r }
+	.brush/color LDZ LTHk [ JMP SWP ] POP NIP JMP2r
+
+@<paint-line> ( x1* y1* x2* y2* -- )
+	,&y STR2
+	,&x STR2
+	,&y2 STR2
+	,&x2 STR2
+	,&x LDR2 ,&x2 LDR2 SUB2 abs2 ,&dx STR2
+	#0000 ,&y LDR2 ,&y2 LDR2 SUB2 abs2 SUB2 ,&dy STR2
+	#ffff [ LIT2 00 _&x2 ] LDR2 ,&x LDR2 lts2 DUP2 ADD2 ADD2 ,&sx STR2
+	#ffff [ LIT2 00 _&y2 ] LDR2 ,&y LDR2 lts2 DUP2 ADD2 ADD2 ,&sy STR2
+	[ LIT2 &dx $2 ] [ LIT2 &dy $2 ] ADD2 STH2
+	&while ( -- )
+		( ) [ LIT2 &y2 $2 ] STH2k [ LIT2 &y $2 ] EQU2
+		( ) [ LIT2 &x2 $2 ] STH2k [ LIT2 &x $2 ] EQU2 STH2r STH2r
+		( ) <paint-dot>
+		AND ?&end
+		STH2kr DUP2 ADD2 DUP2 ,&dy LDR2 lts2 ?&skipy
+		STH2r ,&dy LDR2 ADD2 STH2 ,&x2 LDR2 [ LIT2 &sx $2 ] ADD2 ,&x2 STR2
+	&skipy ( -- )
+		,&dx LDR2 gts2 ?&while
+	STH2r ,&dx LDR2 ADD2 STH2 ,&y2 LDR2 [ LIT2 &sy $2 ] ADD2 ,&y2 STR2
+	!&while
+	&end POP2r JMP2r
+
+@<paint-dot> ( x* y* -- )
+	get-brush-type ,&fn STR2
+	get-brush-shape ,&patt STR2
+	,&y STR2
+	,&x STR2
+	#4000
+	&l ( -- )
+		#00 OVR
+		( addr* ) DUP2 #03 SFT [ LIT2 &patt $2 ] ADD2 LDA STH
+		( mask ) #80 OVR #07 AND SFT STHr AND #00 EQU ?&>no-pixel
+			( x* ) DUP2 #07 AND [ LIT2 &x $2 ] ADD2
+			( y* ) OVR2 #03 SFT [ LIT2 &y $2 ] ADD2
+			( fn ) [ LIT2 &fn $2 ] JSR2 &>no-pixel
+		POP2 INC GTHk ?&l
+	POP2 JMP2r
+
+@abs2 ( a* -- f )
+	DUP2 #0f SFT2 EQU ?{ #0000 SWP2 SUB2 }
+	JMP2r
+
+@lts2 ( a* b* -- f )
+	#8000 STH2k ADD2 SWP2 STH2r ADD2 GTH2 JMP2r
+
+@gts2 ( a* b* -- f )
+	#8000 STH2k ADD2 SWP2 STH2r ADD2 LTH2 JMP2r
+
+(
+@|file )
+
+@<save-file> ( name* -- )
+	;dict/save <pstr>
+	DUP2 <pstr>
+	#0a18 DEO
+	.File/name DEO2
+	#a400 .File/length DEO2
+	;pict .File/write DEO2
+	JMP2r
+
+@<open-icn> ( name* -- )
+	.File/name DEO2
+	#0008 .File/length DEO2
+	;pict ,&ptr STR2
+	&s ( -- )
+		[ LIT2 &ptr $2 ] DUP2 #0010 ADD2 ,&ptr STR2
+		feof ?&end
+		!&s
+	&end !<redraw-all>
+
+@<open-file> ( name* -- )
+	DUP2 scap/ #0004 SUB2 ;dict/icn-ext scmp ?<open-icn>
+	;dict/open <pstr>
+	DUP2 <pstr>
+	#0a18 DEO
+	.File/name DEO2
+	#a400 .File/length DEO2
+	;pict .File/read DEO2
+	( >> )
+
+(
+@|drawing )
+
+@<redraw-all> ( -- )
+	#0000 DUP2 .Screen/x DEO2
+	.Screen/y DEO2
+	;pict .Screen/addr DEO2
+	[ LIT2 05 -Screen/auto ] DEO
+	.canvas/height LDZ2 #03 SFT2 NIP #00
+	&v ( -- )
+		.canvas/width LDZ2 #03 SFT2 NIP #00
+	&h ( -- )
+		[ LIT2 81 -Screen/sprite ] DEO
+		INC GTHk ?&h
+	POP2
+	( ) #0000 .Screen/x DEO2
+	( ) .Screen/y DEI2k #0008 ADD2 ROT DEO2
+	INC GTHk ?&v
+	POP2
+
+@<draw-menu> ( -- )
+	.menu/hide LDZ ?<clear-menu>
+	#0000 .Screen/y DEO2
+	#000e .Screen/x DEO2
+	[ LIT2 93 -Screen/pixel ] DEO
+	#0002 .Screen/x DEO2
+	[ LIT2 06 -Screen/auto ] DEO
+	( | shapes )
+	;shapes-icns [ LIT2 00 -brush/shape ] LDZ #63 SFT ADD2 .Screen/addr DEO2
+	#0800
+	&l-shapes ( -- )
+		#00 OVR #000a MUL2 INC2 INC2 .Screen/y DEO2
+		DUP .brush/shape LDZ #07 AND EQU #05 MUL .Screen/sprite DEO
+		INC GTHk ?&l-shapes
+	POP2
+	( | patts )
+	;patts-icns .Screen/addr DEO2
+	#0a00
+	&l-patts ( -- )
+		#00 OVR #09 ADD #000a MUL2 INC2 INC2 .Screen/y DEO2
+		DUP .brush/patt LDZ EQU #05 MUL .Screen/sprite DEO
+		INC GTHk ?&l-patts
+	POP2
+	( | blend )
+	.canvas/height LDZ2 #000c SUB2 .Screen/y DEO2
+	;blend-icns [ LIT2 00 -brush/blend ] LDZ #30 SFT ADD2 .Screen/addr DEO2
+	[ LIT2 00 -Screen/sprite ] DEO
+	JMP2r
+
+@<redraw-tile> ( x* y* -- )
+	.menu/hide LDZ ?{
+		OVR2 #0010 GTH2 ?{ <hide-menu> }
+		}
+	get-tile-addr .Screen/addr DEO2
+	#33 SFT2 .Screen/y DEO2
+	#33 SFT2 .Screen/x DEO2
+	[ LIT2 81 -Screen/sprite ] DEO
+	JMP2r
+
+@<clear-menu> ( -- )
+	.canvas/height LDZ2 #0000
+	&y ( -- )
+		#0000 OVR2 <redraw-tile>
+		#0008 OVR2 <redraw-tile>
+		#0008 ADD2 GTH2k ?&y
+	POP2 POP2 JMP2r
+
+@<draw-pointer> ( -- )
+	.brush/color LDZ #00 EQU ?&eraser
+	.Mouse/state DEI #01 GTH ?&eraser
+	.brush/color LDZ #40 ADD ;pointer-icn !<update-cursor>
+	&eraser #43 ;eraser-icn
+	( >> )
+
+@<update-cursor> ( color addr* -- )
+	[ LIT2 00 -Screen/auto ] DEO
+	;fill-icn .Screen/addr DEO2
+	#40 <draw-cursor>
+	.Screen/addr DEO2
+	.Mouse/x DEI2 ,<draw-cursor>/x STR2
+	.Mouse/y DEI2 ,<draw-cursor>/y STR2
+	( >> )
+
+@<draw-cursor> ( color -- )
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
+	.Screen/sprite DEO
+	JMP2r
+
+(
+@|stdlib )
+
+@zkey ( key ztr -- proc )
+	OVR #21 LTH ?&eval
+	LDZk #2f EQU ?&overflow
+	( write char ) STH #00 STHkr LDZk ADD INC STZ2
+	( incr len ) STHr LDZk INC SWP STZ
+	#00 JMP2r
+	&overflow ( key ztr -- proc )
+		( ;err/token <set-error> )
+	&eval ( key ztr -- proc )
+		NIP LDZk #00 ROT STZ
+		JMP2r
+
+@scap ( str* -- end* )
+	&w ( -- )
+		INC2 & LDAk ?&w
+	JMP2r
+
+@scmp ( a* b* -- f )
+	STH2
+	&l ( a* b* -- f )
+		LDAk LDAkr STHr NEQk ?&d
+		DUP EOR EQUk ?&d
+		POP2 INC2 INC2r !&l
+	&d ( a* c1 c2 b* -- f )
+		NIP2 POP2r EQU JMP2r
+
+@<scpy> ( src* dst* -- )
+	STH2
+	&w ( -- )
+		LDAk #00 STH2kr STA2
+		INC2r INC2 LDAk ?&w
+	POP2 POP2r JMP2r
+
+@feof ( buf* -- eof )
+	.File/read DEO2
+	.File/success DEI2 #0000 EQU2 JMP2r
+
+@load-theme ( -- )
+	;&path .File/name DEO2
+	#0002 .File/length DEO2
+	[ LIT2 -System/debug -System/r ]
+	&l ( -- )
+		;&buf feof ?&end
+		DUP [ LIT2 &buf $2 ] ROT DEO2
+		INC INC NEQk ?&l
+	&end POP2 JMP2r
+	&path ".theme $1
+
+@<phex> ( short* -- )
+	SWP <phex>/b
+	&b ( -- )
+		DUP #04 SFT <phex>/c
+	&c ( -- )
+		#0f AND DUP #09 GTH #27 MUL ADD LIT "0 ADD #18 DEO
+		JMP2r
+
+@<pstr> ( str* -- )
+	LDAk #18 DEO
+	INC2 LDAk ?<pstr>
+	POP2 JMP2r
+
+(
+@|assets )
+
+@fill-icn
+	[ ffff ffff ffff ffff ]
+
+@pointer-icn
+	[ 80c0 e0f0 f8e0 1000 ]
+
+@eraser-icn
+	[ c0e0 7038 1c0a 0400 ]
+
+@hand-icn
+	[ 2020 20b8 7c7c 3838 ]
+
+@shapes-icns
+	[
+	7eff ffff ffff ff7e 3c7e ffff ffff 7e3c
+	187e 7eff ff7e 7e18 003c 7e7e 7e7e 3c00
+	0018 3c7e 7e3c 1800 0000 183c 3c18 0000
+	0000 0018 1800 0000 0000 0010 0000 0000 ]
+
+@extended-icns
+	[
+	0010 183c 3c18 0800 0000 183e 7c18 0000
+	183c 3c3c 3c3c 3c18 0000 7eff ff7e 0000
+	1018 1818 1818 1808 0000 007f fe00 0000
+	0060 7038 1c0e 0600 0006 0e1c 3870 6000 ]
+
+@patts-icns
+	[
+	ffff ffff ffff ffff aa55 aa55 aa55 aa55
+	cccc 3333 cccc 3333 f0f0 f0f0 0f0f 0f0f
+	0055 00aa 0055 00aa 0044 0000 0011 0000
+	0044 0011 0044 0011 0000 0011 0000 0011
+	1122 4488 1122 4488 8844 2211 8844 2211 ]
+
+@blend-icns
+	[
+	ffff ffff 8181 81ff ff81 8181 ffff ffff ]
+
+@dict &default "pict40x28.chr $1
+	&save "Saved 20 $1
+	&open "Opened 20 $1
+	&icn-ext ".icn $1
+
+(
+@|memory )
+
+@pict
+
+

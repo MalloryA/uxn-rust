@@ -32,6 +32,9 @@ released under the MIT license. It also contains compiled `.rom` files which
 were assembled using `uxnasm`. This is for the purpose of testing this
 assembler.
 
+`tal/tests/roms/oekaki.tal` is from [oekaki](https://git.sr.ht/~rabbits/oekaki)
+which is copyright Divine Lu Linvega.
+
 The remainder of this repository is also released under the MIT license.
 
 ### Credit
