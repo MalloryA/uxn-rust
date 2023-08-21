@@ -14,6 +14,16 @@
 file. "Invalid `.tal` file" means any `.tal` file for which `uxnasm` does not
 produce a ROM file.
 
+Sample error output:
+
+```
+% ./target/debug/tal tal/tests/roms/projects/library/load-rom.tal output.rom
+tal/tests/roms/projects/library/load-rom.tal:13: Error: unknown name "File/name"
+
+        .File/name DEO2
+        ^^^^^^^^^^
+```
+
 ### Copyright note
 
 `tal/tests/roms/projects` contains source files from
