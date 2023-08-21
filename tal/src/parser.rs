@@ -227,11 +227,15 @@ fn parse(
                     address_references.insert(full_name, position);
                 }
                 TokenType::Instant(name) => {
+                    if name == "}" {
+                        continue;
+                    }
                     rom.write_byte(position, Opcode::JSI.as_byte());
                     position += 1;
                     fill_later.push(FillLater::Short(position, true, name, chunk));
                     position += 2;
                 }
+                TokenType::Idunno => {}
             },
         }
     }
@@ -527,6 +531,17 @@ mod tests {
 
         let input = "
             |0100 @foo 1234 _foo
+        ";
+
+        assert_match(input, expected);
+    }
+
+    #[test]
+    fn it_works_004() {
+        let expected = "1234 20 0002 5678 9abc";
+
+        let input = "
+            1234 ?{ 5678 } 9abc
         ";
 
         assert_match(input, expected);

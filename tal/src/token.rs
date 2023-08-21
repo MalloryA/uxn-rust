@@ -22,6 +22,7 @@ pub enum TokenType {
     AddressRawAbsoluteByte(String, bool),
     AddressRawAbsoluteShort(String, bool),
     AddressRawRelative(String, bool),
+    Idunno,
 }
 
 impl TokenType {
@@ -151,7 +152,11 @@ impl TokenType {
 
             "?" => {
                 let (name, child) = parse_name(&chunk.value[1..]);
-                TokenType::ImmediateConditional(name.to_string(), child)
+                if name == "{" {
+                    TokenType::Idunno
+                } else {
+                    TokenType::ImmediateConditional(name.to_string(), child)
+                }
             }
 
             _ => TokenType::Instant(chunk.value.clone()),
